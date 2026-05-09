@@ -812,10 +812,24 @@ a:hover { text-decoration: underline; }
 /* ── Footer ── */
 .app-footer {
   text-align: center;
-  padding: 24px;
+  padding: 22px 24px 26px;
   color: var(--text-soft);
   font-size: 12px;
   letter-spacing: 0.05em;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.app-footer .footer-product {
+  font-weight: 500;
+  color: var(--text-soft);
+}
+.app-footer .footer-copyright {
+  font-size: 11px;
+  color: var(--text-soft);
+  opacity: 0.75;
+  letter-spacing: 0.04em;
+  direction: ltr;
 }
 
 /* ── Mobile tweaks ── */
