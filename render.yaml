@@ -1,0 +1,27 @@
+# Render IaC config — auto-detected when you create a Blueprint deploy.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: selected-smart-brief
+    runtime: python
+    plan: free
+    region: frankfurt          # closest to IL — lower latency
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "app:create_app()" --workers 2 --timeout 120
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.3
+      - key: SECRET_KEY
+        generateValue: true     # Render auto-generates a 32-char random secret
+      - key: ACCESS_USER
+        value: selected
+      - key: ACCESS_PASSWORD
+        sync: false             # set manually in Render dashboard (your demo password)
+      - key: BASE_URL
+        sync: false             # set after first deploy: https://<service>.onrender.com
+      - key: ANTHROPIC_API_KEY
+        sync: false             # leave empty until Sprint 4
+      - key: DEFAULT_TEMPLATE
+        value: seo-ppc-brief
