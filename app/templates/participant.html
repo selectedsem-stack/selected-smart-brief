@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ dept_def.label_he }} — {{ brief.client_name }}{% endblock %}
+
+{% block header_meta %}{{ brief.client_name }}{% endblock %}
+
+{% block content %}
+<div class="participant-header">
+  <div class="eyebrow">{{ brief.client_name }}</div>
+  <h1>{{ dept_def.label_he }} <span>·</span> פרטי הסקשן</h1>
+</div>
+
+<form method="post" class="card" novalidate>
+
+  {% for f in dept_def.fields %}
+    <div class="field {% if f.type == 'list' %}field-list{% endif %}">
+      <label for="{{ f.id }}">
+        {% if f.required %}<span class="req">*</span>{% endif %}{{ f.label_he }}
+      </label>
+      {% if f.hint %}<div class="hint">{{ f.hint }}</div>{% endif %}
+
+      {% if f.type in ('text','tel','email','url') %}
+        <input type="{{ f.type }}" id="{{ f.id }}" name="{{ f.id }}"
+               value="{{ data.get(f.id, '') }}"
+               {% if f.required %}required{% endif %}>
+      {% elif f.type == 'textarea' %}
+        <textarea id="{{ f.id }}" name="{{ f.id }}" rows="3"
+                  {% if f.required %}required{% endif %}>{{ data.get(f.id, '') }}</textarea>
+      {% elif f.type == 'list' %}
+        <textarea id="{{ f.id }}" name="{{ f.id }}" rows="4"
+                  placeholder="פריט אחד בכל שורה"
+                  {% if f.required %}required{% endif %}>{{ data.get(f.id, '') }}</textarea>
+      {% elif f.type == 'select' %}
+        <select id="{{ f.id }}" name="{{ f.id }}" {% if f.required %}required{% endif %}>
+          <option value="">— בחר —</option>
+          {% for opt in f.options %}
+            <option value="{{ opt.value }}" {% if data.get(f.id) == opt.value %}selected{% endif %}>{{ opt.label_he }}</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <div class="form-actions">
+    <button type="submit" class="btn btn-lg">שמור סקשן</button>
+    <a href="{{ url_for('public.brief_dashboard', brief_id=brief.id) }}" class="btn btn-outline">חזור לבריף</a>
+  </div>
+</form>
+{% endblock %}

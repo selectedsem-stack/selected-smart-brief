@@ -1,0 +1,54 @@
+{
+  "id": "seo-ppc-brief",
+  "label_he": "בריף SEO + PPC",
+  "departments": {
+    "about": {
+      "label_he": "על הלקוח",
+      "always_required": true,
+      "icon": "client",
+      "fields": [
+        {"id": "company_name",      "label_he": "שם החברה",                 "type": "text",     "required": true},
+        {"id": "contact_name",      "label_he": "שם איש קשר",               "type": "text",     "required": true},
+        {"id": "contact_phone",     "label_he": "טלפון נייד",               "type": "tel",      "required": true},
+        {"id": "contact_email",     "label_he": "דואר אלקטרוני",            "type": "email",    "required": true},
+        {"id": "services",          "label_he": "שירותי החברה",             "type": "textarea", "required": true,  "hint": "מה החברה מוכרת או מספקת"},
+        {"id": "about",             "label_he": "אודות החברה",              "type": "textarea", "required": true,  "hint": "סיפור החברה, ותק, מיקום, ערכים"},
+        {"id": "audience",          "label_he": "קהל יעד",                  "type": "textarea", "required": true,  "hint": "מי הלקוחות העיקריים"},
+        {"id": "differentiators",   "label_he": "בידולים כלפי מתחרים",      "type": "list",     "required": true,  "hint": "כל בידול בשורה נפרדת"},
+        {"id": "current_url",       "label_he": "כתובת אתר נוכחי",          "type": "url",      "required": false},
+        {"id": "current_url_notes", "label_he": "הערות לאתר",                "type": "textarea", "required": false, "hint": "למשל: דומיין חדש, שדרוג מתוכנן וכו׳"},
+        {"id": "competitors",       "label_he": "מתחרים בשוק",              "type": "textarea", "required": false, "hint": "ציין שמות מתחרים מרכזיים"}
+      ]
+    },
+    "seo": {
+      "label_he": "קידום אורגני (SEO)",
+      "icon": "seo",
+      "fields": [
+        {"id": "keywords",              "label_he": "ביטויים חשובים למחקר", "type": "list",     "required": true,  "hint": "ביטוי בכל שורה"},
+        {"id": "prior_seo",             "label_he": "האם בוצע קידום אורגני בעבר?", "type": "select",   "required": true,  "options": [{"value":"no","label_he":"לא"},{"value":"yes","label_he":"כן"},{"value":"partial","label_he":"חלקי"}]},
+        {"id": "prior_seo_notes",       "label_he": "פרטים על קידום קודם",  "type": "textarea", "required": false, "hint": "אם 'כן' או 'חלקי' — מי קידם, איזה תקופה, מה התוצאות"},
+        {"id": "content_topics",        "label_he": "נושאי תוכן לאתר",      "type": "textarea", "required": true,  "hint": "אילו נושאים יכוסו בתוכן באתר"},
+        {"id": "complementary_services","label_he": "שירותים משלימים",      "type": "textarea", "required": false, "hint": "מוצרים נלווים שיקבלו חשיפה דיגיטלית"},
+        {"id": "assets_actions",        "label_he": "גישה לנכסים ופעולות ראשונות", "type": "textarea", "required": true, "hint": "Google Business, Search Console, Analytics — מי מקים?"},
+        {"id": "free_notes",            "label_he": "הערות חופשיות (SEO)",  "type": "textarea", "required": false, "hint": "כל מה שלא נכנס לשדות אחרים"}
+      ]
+    },
+    "ppc": {
+      "label_he": "קמפיין ממומן (PPC)",
+      "icon": "ppc",
+      "fields": [
+        {"id": "goal",                  "label_he": "מטרת הקמפיין",          "type": "text",     "required": true,  "hint": "למשל: הגדלת מכירות אונליין, לידים, חשיפה"},
+        {"id": "budget",                "label_he": "תקציב חודשי",           "type": "text",     "required": true,  "hint": "סכום + מטבע. אפשר לפלטפורמה — נשמר כטקסט חופשי"},
+        {"id": "platforms",             "label_he": "פלטפורמות פרסום",       "type": "list",     "required": true,  "hint": "Google Search / Display / Meta / TikTok וכו׳"},
+        {"id": "existing_campaigns",    "label_he": "קמפיין קיים וגישות",    "type": "textarea", "required": true,  "hint": "האם קיימים חשבונות פרסום? מי בעל הגישה?"},
+        {"id": "audience",              "label_he": "קהל יעד לקמפיין",       "type": "textarea", "required": true,  "hint": "פרופיל דמוגרפי, התעניינויות, גיל"},
+        {"id": "key_messages",          "label_he": "מסרים מרכזיים",         "type": "list",     "required": true,  "hint": "מסר בכל שורה"},
+        {"id": "geographic_area",       "label_he": "אזור גאוגרפי",          "type": "textarea", "required": true,  "hint": "ערים, רדיוס, ארץ"},
+        {"id": "availability",          "label_he": "זמינות הקמפיין",        "type": "textarea", "required": false, "hint": "ימי השבוע, שעות פעילות, מגבלות משלוח"},
+        {"id": "additional_notes",      "label_he": "הערות נוספות ופעולות נדרשות", "type": "list", "required": false, "hint": "פעולה בכל שורה"},
+        {"id": "free_notes",            "label_he": "הערות חופשיות (PPC)",   "type": "textarea", "required": false, "hint": "כל מה שלא נכנס לשדות אחרים"}
+      ]
+    }
+  },
+  "participant_meta": []
+}

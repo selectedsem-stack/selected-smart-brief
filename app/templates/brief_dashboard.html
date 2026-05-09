@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ brief.client_name }} — Smart Brief{% endblock %}
+
+{% block header_meta %}
+{{ brief.client_name }}
+{% endblock %}
+
+{% block content %}
+<div class="brief-meta">
+  <div>
+    <h1>{{ brief.client_name }}</h1>
+    <div class="brief-id">ID: {{ brief.id[:12] }}…</div>
+  </div>
+  <span class="status">{{ brief.status }}</span>
+</div>
+
+<div class="qr-card">
+  <div>
+    <h3>שתף את הבריף</h3>
+    <p style="color:var(--text-mid);font-size:14px;line-height:1.6;">
+      כל איש צוות יכול לסרוק את ה-QR מהטלפון שלו ולמלא את הסקשן שלו במקביל.
+      כתובת ישירה לשיתוף:
+    </p>
+    <div class="url">{{ share_url }}</div>
+  </div>
+  <div class="qr-img">
+    <img src="{{ qr_uri }}" alt="QR Code">
+  </div>
+</div>
+
+<h2 style="font-size:18px;margin-bottom:14px;font-weight:700;">סקשנים</h2>
+{% if brief.status == 'submitted' %}
+  <div style="background:#e7f5ea;color:#2f8a3a;border-right:3px solid #2f8a3a;padding:14px 18px;border-radius:8px;margin-bottom:18px;font-size:14px;">
+    הבריף נשלח לאישור · בהמשך הפיתוח (Sprint 4) — Claude יבצע ולידציה אוטומטית והאימייל למנהל יישלח כאן.
+  </div>
+{% endif %}
+<div class="section-list">
+  {% for sec in sections_status %}
+    <a class="section-row"
+       href="{{ url_for('public.participant_form', brief_id=brief.id, dept=sec.dept) }}">
+      <div class="label-block">
+        <div class="label">{{ sec.label_he }}</div>
+        <div class="meta">
+          {% if sec.has_data %}
+            הושלם{% if sec.filled_at %} · {{ sec.filled_at[:16].replace('T',' ') }}{% endif %}
+          {% else %}
+            טרם מולא
+          {% endif %}
+        </div>
+      </div>
+      <span class="badge {{ 'filled' if sec.has_data else 'empty' }}">
+        {{ 'הושלם' if sec.has_data else 'ריק' }}
+      </span>
+    </a>
+  {% endfor %}
+</div>
+
+{# ── Preview button ── #}
+<div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap;">
+  <a href="{{ url_for('public.brief_preview', brief_id=brief.id) }}" target="_blank" class="btn btn-outline">
+    📄 תצוגה מקדימה למסמך
+  </a>
+</div>
+
+{# ── Send for approval ── #}
+<div style="margin-top:28px;padding:24px;background:#fff;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,0.08);">
+  {% if all_filled %}
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px;">כל הסקשנים מולאו</div>
+        <div style="color:var(--text-mid);font-size:14px;">שליחת הבריף לאישור מנהל — Claude יבצע ולידציה וליטוש, והמנהל יקבל אימייל</div>
+      </div>
+      <form method="post" action="{{ url_for('public.submit_for_approval', brief_id=brief.id) }}" style="margin:0;">
+        <button type="submit" class="btn btn-lg" {% if brief.status == 'submitted' %}disabled style="opacity:0.5;cursor:not-allowed;"{% endif %}>
+          {% if brief.status == 'submitted' %}נשלח ✓{% else %}שלח לאישור ←{% endif %}
+        </button>
+      </form>
+    </div>
+  {% else %}
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div style="font-size:30px;">⏳</div>
+      <div>
+        <div style="font-size:16px;font-weight:600;">ממתין למילוי {{ missing_count }} סקשן{% if missing_count > 1 %}ים{% endif %}</div>
+        <div style="color:var(--text-soft);font-size:13.5px;margin-top:2px;">כשכולם יסיימו, יופיע כאן כפתור "שלח לאישור".</div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

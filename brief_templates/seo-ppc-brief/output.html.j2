@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>סיכום פגישת בריף — {{ data.client_name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:     #E8722A;
+      --orange-bg:  #E06820;
+      --dark:       #141414;
+      --dark-mid:   #242424;
+      --dark-card:  #1e1e1e;
+      --white:      #fafaf8;
+      --gray-bg:    #f2f2f0;
+      --gray-line:  #e0e0dc;
+      --text:       #1a1a1a;
+      --text-mid:   #4a4a44;
+      --text-soft:  #888882;
+    }
+
+    body {
+      font-family: 'Heebo', -apple-system, Arial, sans-serif;
+      background: #c8c8c4;
+      color: var(--text);
+    }
+
+    .page {
+      width: 297mm;
+      min-height: 210mm;
+      background: var(--white);
+      margin: 0 auto 14mm;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media screen { body { padding: 14mm 0; } }
+    @page { size: A4 landscape; margin: 0; }
+    @media print {
+      body { background: none; padding: 0; }
+      .page { margin: 0; page-break-after: always; break-after: page; width: 297mm; min-height: 210mm; height: 210mm; }
+      .no-print { display: none !important; }
+    }
+
+    .print-bar { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 100; }
+    .print-btn {
+      background: var(--orange); color: #fff; border: none; border-radius: 8px;
+      padding: 0.75rem 2rem; font-family: inherit; font-size: 1rem; font-weight: 700;
+      cursor: pointer; direction: rtl; box-shadow: 0 4px 16px rgba(232,114,42,0.4);
+    }
+
+    .cover { display: grid; grid-template-columns: 1fr 1fr; height: 210mm; }
+    .cover-photo { position: relative; overflow: hidden; }
+    .cover-photo img { width: 100%; height: 100%; object-fit: cover; object-position: right center; display: block; }
+    .cover-panel {
+      background: var(--orange-bg); display: flex; flex-direction: column;
+      padding: 12mm 11mm; justify-content: space-between;
+    }
+    .cover-logo img { height: 32px; width: auto; filter: brightness(0) invert(1); }
+    .cover-date {
+      font-size: 8pt; font-weight: 400; color: rgba(255,255,255,0.7);
+      letter-spacing: 0.05em; text-align: left;
+    }
+    .cover-title-block { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .cover-eyebrow {
+      font-size: 9pt; font-weight: 500; color: rgba(255,255,255,0.75);
+      letter-spacing: 0.12em; margin-bottom: 4mm;
+    }
+    .cover-client {
+      font-size: 38pt; font-weight: 900; color: #fff; line-height: 1.0; letter-spacing: -0.02em;
+    }
+    .cover-sub {
+      font-size: 11pt; font-weight: 300; color: rgba(255,255,255,0.85);
+      margin-top: 4mm; line-height: 1.5;
+    }
+
+    .page-header {
+      background: var(--dark); padding: 4.5mm 10mm;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .page-header-title { font-size: 16pt; font-weight: 700; color: #fff; letter-spacing: -0.02em; }
+    .page-header-title span { color: var(--orange); }
+    .page-header-logo { flex-shrink: 0; }
+    .page-header-logo img {
+      height: 22px; width: auto; display: block; filter: brightness(0) invert(1); opacity: 0.92;
+    }
+
+    .page-body { flex: 1; padding: 6mm 10mm; overflow: hidden; }
+
+    .page-footer {
+      border-top: 0.3mm solid var(--gray-line); padding: 2.5mm 10mm;
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .page-footer-logo img { height: 14px; width: auto; }
+    .page-footer-tag { font-size: 7.5pt; color: var(--text-soft); letter-spacing: 0.06em; }
+
+    .section-label {
+      font-size: 8.5pt; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--text-soft); margin-bottom: 4mm;
+    }
+
+    .card-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 3.5mm; }
+    .card-grid.three-col { grid-template-columns: repeat(3, 1fr); }
+
+    .info-card {
+      background: var(--gray-bg); border-radius: 7px; padding: 4.5mm;
+      display: flex; gap: 3.5mm; align-items: flex-start;
+    }
+    .card-icon {
+      width: 36px; height: 36px; background: var(--orange); border-radius: 6px;
+      flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .card-icon svg { width: 18px; height: 18px; fill: #fff; }
+    .card-content h4 {
+      font-size: 10.5pt; font-weight: 700; color: var(--text); margin-bottom: 2mm; line-height: 1.3;
+    }
+    .card-content p {
+      font-size: 9.5pt; font-weight: 400; color: var(--text-mid); line-height: 1.55;
+    }
+    .card-content ul { padding: 0; list-style: none; }
+    .card-content ul li {
+      font-size: 9.5pt; color: var(--text-mid); line-height: 1.55;
+      padding-right: 10px; position: relative;
+    }
+    .card-content ul li::before {
+      content: '•'; position: absolute; right: 0; color: var(--orange); font-weight: 700;
+    }
+
+    .intro-page { display: grid; grid-template-columns: 5fr 7fr; height: 210mm; }
+    .intro-brand {
+      background: var(--orange-bg); display: flex; flex-direction: column;
+      padding: 10mm; justify-content: space-between; position: relative; overflow: hidden;
+    }
+    .intro-brand::before {
+      content: ''; position: absolute; bottom: -15%; left: -20%;
+      width: 80%; height: 80%; border-radius: 50%;
+      background: rgba(255,255,255,0.07); pointer-events: none;
+    }
+    .intro-brand-logo img {
+      height: 28px; width: auto; filter: brightness(0) invert(1);
+      position: relative; z-index: 1;
+    }
+    .intro-brand-title {
+      font-size: 54pt; font-weight: 900; color: #fff; line-height: 0.9;
+      letter-spacing: -0.03em; position: relative; z-index: 1;
+    }
+    .intro-brand-sub {
+      font-size: 10pt; font-weight: 400; color: rgba(255,255,255,0.75);
+      letter-spacing: 0.04em; margin-top: 3mm; position: relative; z-index: 1;
+    }
+    .intro-brand-label {
+      font-size: 7.5pt; font-weight: 700; letter-spacing: 0.25em;
+      text-transform: uppercase; color: rgba(255,255,255,0.55);
+      position: relative; z-index: 1;
+    }
+    .intro-content {
+      background: var(--dark); padding: 10mm 12mm; display: flex; flex-direction: column;
+      justify-content: center; gap: 6mm;
+    }
+    .intro-content-header {
+      font-size: 9pt; font-weight: 700; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 1mm;
+    }
+    .intro-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
+    .intro-fact { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 4.5mm; }
+    .fact-label {
+      font-size: 8pt; color: rgba(255,255,255,0.45); letter-spacing: 0.08em;
+      text-transform: uppercase; margin-bottom: 1.5mm;
+    }
+    .fact-value { font-size: 12pt; font-weight: 700; color: #fff; line-height: 1.3; }
+    .fact-value span { color: var(--orange); }
+    .intro-services { display: grid; grid-template-columns: 1fr 1fr; gap: 2.5mm; }
+    .service-item {
+      display: flex; align-items: center; gap: 3mm; color: rgba(255,255,255,0.85);
+      font-size: 10pt; font-weight: 500; padding: 2.5mm 0;
+      border-bottom: 0.3mm solid rgba(255,255,255,0.07);
+    }
+    .service-item-dot {
+      width: 7px; height: 7px; background: var(--orange); border-radius: 2px; flex-shrink: 0;
+    }
+
+    .steps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 8mm; }
+    .step-row { display: flex; gap: 3.5mm; align-items: flex-start; }
+    .step-num {
+      width: 28px; height: 28px; background: var(--orange); border-radius: 5px;
+      color: #fff; font-size: 10pt; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-text { font-size: 9.5pt; color: var(--text); line-height: 1.5; padding-top: 2px; }
+    .step-text strong { display: block; font-size: 10pt; font-weight: 700; color: var(--text); margin-bottom: 0.5mm; }
+
+    .notes-box { background: var(--dark); border-radius: 8px; padding: 5mm; color: #fff; }
+    .notes-box-label {
+      font-size: 8pt; font-weight: 700; letter-spacing: 0.15em;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 2.5mm;
+    }
+    .notes-box p, .notes-box li {
+      font-size: 9.5pt; color: rgba(255,255,255,0.82); line-height: 1.6;
+    }
+    .notes-box ul { padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1.5mm; }
+    .notes-box ul li { padding-right: 12px; position: relative; }
+    .notes-box ul li::before {
+      content: '›'; position: absolute; right: 0; color: var(--orange);
+      font-weight: 700; font-size: 11pt;
+    }
+
+    .contact-row {
+      display: flex; gap: 8mm; margin-bottom: 5mm; padding: 4mm 5mm;
+      background: var(--dark); border-radius: 8px; align-items: center;
+    }
+    .contact-item { display: flex; flex-direction: column; gap: 0.5mm; }
+    .contact-label {
+      font-size: 7.5pt; font-weight: 600; letter-spacing: 0.1em;
+      color: var(--orange); text-transform: uppercase;
+    }
+    .contact-value { font-size: 12pt; font-weight: 500; color: #fff; }
+  </style>
+</head>
+<body>
+
+{# ── PAGE 1: COVER ── #}
+<div class="page cover">
+  <div class="cover-photo">
+    <img src="{{ team_src }}" alt="Selected Team">
+  </div>
+  <div class="cover-panel">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div class="cover-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
+      <div class="cover-date">{{ data.date_he }}</div>
+    </div>
+    <div class="cover-title-block">
+      <div class="cover-eyebrow">סיכום פגישת בריף</div>
+      <div class="cover-client">{% for line in data.client_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>
+      <div class="cover-sub">פגישת היכרות והכרת<br>הצרכים הדיגיטליים</div>
+    </div>
+    <div style="font-size:8pt;color:rgba(255,255,255,0.5);">selected.co.il</div>
+  </div>
+</div>
+
+{# ── PAGE 2: ABOUT THE CLIENT ── #}
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-title">ABOUT YOU — <span>על הלקוח</span></div>
+    <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+  </div>
+  <div class="page-body">
+    <div class="contact-row">
+      <div class="contact-item">
+        <span class="contact-label">שם החברה</span>
+        <span class="contact-value">{{ data.about.company_name }}</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">שם הלקוח</span>
+        <span class="contact-value">{{ data.about.contact_name }}</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">טלפון נייד</span>
+        <span class="contact-value">{{ data.about.contact_phone }}</span>
+      </div>
+      <div class="contact-item">
+        <span class="contact-label">דואר אלקטרוני</span>
+        <span class="contact-value">{{ data.about.contact_email }}</span>
+      </div>
+    </div>
+
+    <div class="card-grid three-col">
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M20 7H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-9 10H5v-2h6v2zm8-4H5v-2h14v2z"/></svg></div>
+        <div class="card-content">
+          <h4>שירותי החברה</h4>
+          <p>{{ data.about.services }}</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+        <div class="card-content">
+          <h4>אודות החברה</h4>
+          <p>{% for line in data.about.about_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+        <div class="card-content">
+          <h4>קהל יעד</h4>
+          <p>{% for line in data.about.audience_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg></div>
+        <div class="card-content">
+          <h4>בידולים כלפי מתחרים</h4>
+          {% if data.about.differentiators %}
+          <ul>
+            {% for d in data.about.differentiators %}<li>{{ d }}</li>{% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+      {% if data.about.current_url %}
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+        <div class="card-content">
+          <h4>כתובת אתר נוכחי</h4>
+          <p>{{ data.about.current_url }}</p>
+          {% if data.about.current_url_notes %}<p style="font-size:8.5pt;color:var(--text-soft);margin-top:1mm;">{{ data.about.current_url_notes }}</p>{% endif %}
+        </div>
+      </div>
+      {% endif %}
+      {% if data.about.competitors %}
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></div>
+        <div class="card-content">
+          <h4>מתחרים בשוק</h4>
+          <p>{{ data.about.competitors }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-tag">סיכום פגישת בריף — {{ data.client_name }}</div>
+  </div>
+</div>
+
+{% if 'seo' in data.departments %}
+{# ── PAGE 3: SEO INTRO ── #}
+<div class="page intro-page">
+  <div class="intro-brand">
+    <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
+    <div>
+      <div class="intro-brand-title">קידום<br>אורגני</div>
+      <div class="intro-brand-sub">SEO Strategy &amp; Execution</div>
+    </div>
+    <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
+  </div>
+  <div class="intro-content" style="position:relative;overflow:hidden;">
+    <div style="position:absolute;left:-20mm;top:-15mm;opacity:0.06;pointer-events:none;">
+      <img src="{{ icon_src }}" style="width:80mm;height:80mm;object-fit:contain;">
+    </div>
+    <div style="position:relative;z-index:1;"><div class="intro-content-header">מה כולל הקידום האורגני שלנו</div></div>
+    <div class="intro-facts">
+      <div class="intro-fact"><div class="fact-label">בסיס</div><div class="fact-value">מחקר ביטויים<br><span>ומתחרים</span></div></div>
+      <div class="intro-fact"><div class="fact-label">תוכן</div><div class="fact-value">כתיבה<br><span>ואופטימיזציה</span></div></div>
+      <div class="intro-fact"><div class="fact-label">טכני</div><div class="fact-value">בניית אתר<br><span>SEO-Ready</span></div></div>
+      <div class="intro-fact"><div class="fact-label">חיצוני</div><div class="fact-value">קישורים<br><span>ויח"צ</span></div></div>
+    </div>
+    <div>
+      <div style="font-size:8.5pt;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:2.5mm;">שלבי התהליך</div>
+      <div class="intro-services">
+        <div class="service-item"><div class="service-item-dot"></div>מחקר מתחרים דיגיטליים</div>
+        <div class="service-item"><div class="service-item-dot"></div>מחקר ביטויים מעמיק</div>
+        <div class="service-item"><div class="service-item-dot"></div>בניית אתר ותוכן SEO</div>
+        <div class="service-item"><div class="service-item-dot"></div>אופטימיזציה טכנית</div>
+        <div class="service-item"><div class="service-item-dot"></div>AB Testing ושיפור המרות</div>
+        <div class="service-item"><div class="service-item-dot"></div>דוחות חודשיים (קולקטור)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── PAGE 4: SEO FIELDS ── #}
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-title">קידום אורגני — <span>פרטי הלקוח</span></div>
+    <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+  </div>
+  <div class="page-body">
+    <div class="card-grid">
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg></div>
+        <div class="card-content">
+          <h4>ביטויים חשובים למחקר</h4>
+          {% if data.seo.keywords %}
+          <ul>
+            {% for kw in data.seo.keywords %}<li>{{ kw }}</li>{% endfor %}
+          </ul>
+          {% endif %}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81-3.73-3.23 4.92-.42L12 5l1.92 4.53 4.92.42-3.73 3.23L16.23 18z"/></svg></div>
+        <div class="card-content">
+          <h4>קידום אורגני בעבר?</h4>
+          <p><strong style="font-size:11pt;">{{ data.seo.prior_seo_label }}</strong></p>
+          {% if data.seo.prior_seo_notes %}<p style="margin-top:1.5mm;">{{ data.seo.prior_seo_notes }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+        <div class="card-content">
+          <h4>נושאי תוכן לאתר</h4>
+          <p>{{ data.seo.content_topics }}</p>
+        </div>
+      </div>
+      {% if data.seo.complementary_services %}
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg></div>
+        <div class="card-content">
+          <h4>שירותים משלימים</h4>
+          <p>{{ data.seo.complementary_services }}</p>
+        </div>
+      </div>
+      {% endif %}
+      <div class="info-card" style="grid-column: span 2;">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 1C5.93 1 1 5.93 1 12s4.93 11 11 11 11-4.93 11-11S18.07 1 12 1zm4.3 7.61l-1.03 4.85-3.31-2.84-1.79 1.88-1-4.31 7.13.42zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg></div>
+        <div class="card-content">
+          <h4>גישה לנכסים ופעולות ראשונות</h4>
+          <p>{{ data.seo.assets_actions }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-tag">קידום אורגני (SEO) — {{ data.client_name }}</div>
+  </div>
+</div>
+
+{# ── PAGE 5: SEO PROCESS ── #}
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-title">קידום אורגני — <span>תהליך העבודה</span></div>
+    <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+  </div>
+  <div class="page-body">
+    <div class="section-label">פירוט שלבי ביצוע הקידום האורגני — מצד החברה ומצד הלקוח</div>
+    <div class="steps-grid">
+      <div class="step-row"><div class="step-num">1</div><div class="step-text"><strong>שלבים ראשונים לאחר הפגישה</strong>מחקר ביטויים · שליחת טופס לאישור · בניית אתר · ארגון תכנים</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-text"><strong>הצפי לחודשים הראשונים</strong>הביטויים יתחילו להגיע לגוגל — כמה חודשים לעמוד 3, לאחר מכן עמוד 2 וכלפי מעלה</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-text"><strong>מחקר מתחרים</strong>נחקור את המתחרים הדיגיטליים — איתור נקודות חולשה לחיקוי ונקודות זכות לעקיפה</div></div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-text"><strong>שימור תוצאות</strong>לאחר שהביטויים יגיעו לעמוד הראשון — תהליך שימור מסודר ייכנס לפעולה</div></div>
+      <div class="step-row"><div class="step-num">5</div><div class="step-text"><strong>AB Testing</strong>לאחר הדירוגים הראשוניים — בדיקות להגדלת שיעורי פניות ומכירות מהאתר</div></div>
+      <div class="step-row"><div class="step-num">6</div><div class="step-text"><strong>כתבות יח"צ</strong>בשלב מתקדם — חיזוק חיצוני ע"י כתבות יח"צ לחיזוק הסמכות הדיגיטלית</div></div>
+      <div class="step-row"><div class="step-num">7</div><div class="step-text"><strong>דו"חות חודשיים (קולקטור)</strong>מידי חודש — Analytics, נתוני ביטויים, כניסות, תעבורה, ספירת מוצר ומכירות</div></div>
+      <div class="step-row"><div class="step-num">8</div><div class="step-text"><strong>תקשורת שוטפת</strong>Selected תמיד ב"שביל" — שיתוף הלקוח בהתפתחויות, עדכונים ומענה על שאלות</div></div>
+      <div class="step-row"><div class="step-num">9</div><div class="step-text"><strong>מעקב אחרי המרות</strong>הגעה לעמוד ראשון היא רק ההתחלה — שיפור מתמיד של שיעורי ההמרה</div></div>
+      <div class="step-row"><div class="step-num">10</div><div class="step-text"><strong>שיטת עבודה ושקיפות</strong>Selected מאמינה בשקיפות מלאה — הצוות זמין 9:00–18:00 ימי א'–ה'</div></div>
+      <div class="step-row"><div class="step-num">11</div><div class="step-text"><strong>שיתוף פעולה שוטף</strong>Selected תספק קונספטים לסרטונים ותעדכן בכל תוכן חדש שיושק</div></div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-tag">קידום אורגני (SEO) — {{ data.client_name }}</div>
+  </div>
+</div>
+{% endif %}
+
+{% if 'ppc' in data.departments %}
+{# ── PAGE 6: PPC INTRO ── #}
+<div class="page intro-page">
+  <div class="intro-brand">
+    <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
+    <div>
+      <div class="intro-brand-title">קמפיין<br>ממומן</div>
+      <div class="intro-brand-sub">PPC · Google &amp; Meta</div>
+    </div>
+    <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
+  </div>
+  <div class="intro-content" style="position:relative;overflow:hidden;">
+    <div style="position:absolute;left:-20mm;top:-15mm;opacity:0.06;pointer-events:none;">
+      <img src="{{ icon_src }}" style="width:80mm;height:80mm;object-fit:contain;">
+    </div>
+    <div style="position:relative;z-index:1;"><div class="intro-content-header">יעדי הקמפיין ופלטפורמות</div></div>
+    <div class="intro-facts">
+      <div class="intro-fact"><div class="fact-label">מטרה</div><div class="fact-value">{{ data.ppc.goal }}</div></div>
+      <div class="intro-fact"><div class="fact-label">תקציב</div><div class="fact-value"><span>{{ data.ppc.budget }}</span></div></div>
+      <div class="intro-fact"><div class="fact-label">Google</div><div class="fact-value">{{ data.ppc.google_summary or 'Search + Display' }}</div></div>
+      <div class="intro-fact"><div class="fact-label">Meta</div><div class="fact-value">{{ data.ppc.meta_summary or 'Facebook + Instagram' }}</div></div>
+    </div>
+    <div>
+      <div style="font-size:8.5pt;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:2.5mm;">פילוח קהל יעד</div>
+      <div class="intro-services">
+        {% for line in data.ppc.audience_lines %}
+          <div class="service-item"><div class="service-item-dot"></div>{{ line }}</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── PAGE 7: PPC FIELDS ── #}
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-title">קמפיין ממומן — <span>פרטי הקמפיין</span></div>
+    <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+  </div>
+  <div class="page-body">
+    <div class="card-grid three-col">
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></div>
+        <div class="card-content">
+          <h4>פלטפורמות פרסום</h4>
+          {% if data.ppc.platforms %}
+          <ul>{% for p in data.ppc.platforms %}<li>{{ p }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81-3.73-3.23 4.92-.42L12 5l1.92 4.53 4.92.42-3.73 3.23L16.23 18z"/></svg></div>
+        <div class="card-content">
+          <h4>קמפיין קיים וגישות</h4>
+          <p>{{ data.ppc.existing_campaigns }}</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+        <div class="card-content">
+          <h4>קהל יעד</h4>
+          <p>{{ data.ppc.audience }}</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg></div>
+        <div class="card-content">
+          <h4>מסרים מרכזיים</h4>
+          {% if data.ppc.key_messages %}
+          <ul>{% for m in data.ppc.key_messages %}<li>{{ m }}</li>{% endfor %}</ul>
+          {% endif %}
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>
+        <div class="card-content">
+          <h4>אזור גאוגרפי</h4>
+          <p>{{ data.ppc.geographic_area }}</p>
+        </div>
+      </div>
+      {% if data.ppc.availability %}
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg></div>
+        <div class="card-content">
+          <h4>זמינות הקמפיין</h4>
+          <p>{{ data.ppc.availability }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if data.ppc.additional_notes %}
+    <div class="notes-box" style="margin-top:3.5mm;">
+      <div class="notes-box-label">הערות נוספות ופעולות נדרשות</div>
+      <ul>
+        {% for note in data.ppc.additional_notes %}<li>{{ note }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-tag">קמפיין ממומן (PPC) — {{ data.client_name }}</div>
+  </div>
+</div>
+
+{# ── PAGE 8: PPC PROCESS ── #}
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-title">קמפיין ממומן — <span>תהליך העבודה</span></div>
+    <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+  </div>
+  <div class="page-body">
+    <div class="section-label">פירוט שלבי ביצוע הקמפיינים הממומנים — מצד החברה ומצד הלקוח</div>
+    <div class="steps-grid">
+      <div class="step-row"><div class="step-num">1</div><div class="step-text"><strong>קבלת גישה והקמת נכסים</strong>גישה לחשבונות קיימים, הקמת חשבונות חדשים במידת הצורך</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-text"><strong>מחקר מתחרים</strong>ניתוח מתחרים דיגיטליים — איתור נקודות חולשה ופעולה בהתאם</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-text"><strong>תכנון ואסטרטגיה</strong>Selected תבצע תכנון מלא לקמפיינים בכל הפלטפורמות הרלוונטיות</div></div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-text"><strong>יצירת חומרים ואישור</strong>ברגע שהחומרים יהיו מוכנים — נשלח לאישור הלקוח לפני ההעלאה לאוויר</div></div>
+      <div class="step-row"><div class="step-num">5</div><div class="step-text"><strong>העלאת הקמפיין</strong>הקמפיין יעלה לתחילת החודש או באמצע החודש בהתאם למוכנות החומרים</div></div>
+      <div class="step-row"><div class="step-num">6</div><div class="step-text"><strong>דו"חות חודשיים (קולקטור)</strong>מידי חודש — דוחות נפרדים לגוגל ולמטא עם נתוני ביצועים מלאים</div></div>
+      <div class="step-row"><div class="step-num">7</div><div class="step-text"><strong>תקשורת שוטפת</strong>Selected תמיד ב"שביל" — שיתוף בהתפתחויות, עדכונים ומענה מנהל הקמפיין</div></div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-tag">קמפיין ממומן (PPC) — {{ data.client_name }}</div>
+  </div>
+</div>
+{% endif %}
+
+{% if show_print_button %}
+<div class="print-bar no-print">
+  <button class="print-btn" onclick="window.print()">⬇ שמור כ-PDF</button>
+</div>
+{% endif %}
+
+</body>
+</html>

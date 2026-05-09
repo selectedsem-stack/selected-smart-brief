@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+
+# Flask
+instance/
+
+# Local env
+.env
+.env.local
+
+# Data
+data/
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PowerPoint extraction (source for team photo only — already copied to assets/)
+.pptx-extract/
+
+# Output (we keep brief-sample.html as reference; future generated outputs go in data/)
+out/

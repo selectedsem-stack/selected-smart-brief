@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}בריף חדש — Smart Brief{% endblock %}
+
+{% block container_class %}narrow{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2>בריף חדש</h2>
+  <form method="post" action="{{ url_for('public.new_brief') }}">
+    <div class="field">
+      <label for="client_name"><span class="req">*</span>שם הלקוח</label>
+      <input type="text" name="client_name" id="client_name" required autofocus
+             placeholder="למשל: מדגה עין המפרץ">
+    </div>
+
+    <div class="field">
+      <label>מחלקות משתתפות</label>
+      <label class="checkbox-row locked">
+        <input type="checkbox" checked disabled>
+        <span class="label">על הלקוח</span>
+        <span style="margin-right:auto;font-size:12px;color:var(--text-soft);">תמיד חובה</span>
+      </label>
+      {% for key, dept in non_about_depts %}
+        <label class="checkbox-row">
+          <input type="checkbox" name="dept_{{ key }}" value="1" checked>
+          <span class="label">{{ dept.label_he }}</span>
+        </label>
+      {% endfor %}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-lg">צור בריף וקבל QR</button>
+      <a href="{{ url_for('public.home') }}" class="btn btn-outline">ביטול</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}שגיאה — Smart Brief{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>{{ code }}</h1>
+  <p>{{ message }}</p>
+  <a href="{{ url_for('public.home') }}" class="btn">חזרה לבית</a>
+</div>
+{% endblock %}

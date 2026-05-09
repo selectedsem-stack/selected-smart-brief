@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="hero">
+  <h1>בריף לקוח, <span>בעשר דקות.</span></h1>
+  <p>פתח בריף חדש, שתף QR עם הצוות בפגישה, והמסמך המעוצב מוכן ללקוח.</p>
+  <a href="{{ url_for('public.new_brief') }}" class="btn btn-lg">+ בריף חדש</a>
+</div>
+{% endblock %}
