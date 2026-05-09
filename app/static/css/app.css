@@ -47,18 +47,33 @@ a:hover { text-decoration: underline; }
 .app-header .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+}
+.app-header .brand-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: #fff;
+  transition: opacity 0.18s;
+}
+.app-header .brand-link:hover { text-decoration: none; opacity: 0.85; }
+.app-header .brand-logo {
+  height: 24px;
+  width: auto;
+  filter: brightness(0) invert(1);
+  display: block;
+}
+.app-header .brand-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255,255,255,0.3);
+}
+.app-header .brand-product {
   font-weight: 700;
-  font-size: 17px;
+  font-size: 16px;
   letter-spacing: -0.01em;
+  color: #fff;
 }
-.app-header .brand .dot {
-  width: 9px;
-  height: 9px;
-  background: var(--orange);
-  border-radius: 2px;
-}
-.app-header .brand a { color: #fff; }
 .app-header .meta {
   font-size: 13px;
   color: rgba(255,255,255,0.6);
