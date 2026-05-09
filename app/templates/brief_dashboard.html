@@ -29,9 +29,20 @@
 </div>
 
 <h2 style="font-size:18px;margin-bottom:14px;font-weight:700;">סקשנים</h2>
-{% if brief.status == 'submitted' %}
-  <div style="background:#e7f5ea;color:#2f8a3a;border-right:3px solid #2f8a3a;padding:14px 18px;border-radius:8px;margin-bottom:18px;font-size:14px;">
-    הבריף נשלח לאישור · בהמשך הפיתוח (Sprint 4) — Claude יבצע ולידציה אוטומטית והאימייל למנהל יישלח כאן.
+{% if brief.status == 'reviewed' %}
+  <div style="background:#fff4e0;color:#a85f00;border-right:3px solid var(--orange);padding:14px 18px;border-radius:8px;margin-bottom:18px;font-size:14.5px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <div>
+      <strong>Claude סיים ליטוש ובדיקת עקביות.</strong> פתח את מסך הסקירה כדי לראות את ההצעות לפני אישור סופי.
+    </div>
+    <a href="{{ url_for('public.brief_review', brief_id=brief.id) }}" class="btn">פתח סקירה ←</a>
+  </div>
+{% elif brief.status == 'ready_for_manager' %}
+  <div style="background:#e7f5ea;color:#2f8a3a;border-right:3px solid var(--success);padding:14px 18px;border-radius:8px;margin-bottom:18px;font-size:14px;">
+    ✓ הבריף אושר ומוכן למנהל. (שליחת אימייל אוטומטית — Sprint 5).
+  </div>
+{% elif brief.status == 'submitted' %}
+  <div style="background:#e8eef7;color:#2c4a78;border-right:3px solid #5b7aa8;padding:14px 18px;border-radius:8px;margin-bottom:18px;font-size:14px;">
+    הבריף נשלח. Claude API לא היה מחובר בעת השליחה — לכן לא בוצע ליטוש.
   </div>
 {% endif %}
 <div class="section-list">
@@ -70,9 +81,14 @@
         <div style="font-size:18px;font-weight:700;margin-bottom:4px;">כל הסקשנים מולאו</div>
         <div style="color:var(--text-mid);font-size:14px;">שליחת הבריף לאישור מנהל — Claude יבצע ולידציה וליטוש, והמנהל יקבל אימייל</div>
       </div>
-      <form method="post" action="{{ url_for('public.submit_for_approval', brief_id=brief.id) }}" style="margin:0;">
-        <button type="submit" class="btn btn-lg" {% if brief.status == 'submitted' %}disabled style="opacity:0.5;cursor:not-allowed;"{% endif %}>
-          {% if brief.status == 'submitted' %}נשלח ✓{% else %}שלח לאישור ←{% endif %}
+      {% set _locked = brief.status in ('reviewed', 'ready_for_manager', 'submitted') %}
+      <form method="post" action="{{ url_for('public.submit_for_approval', brief_id=brief.id) }}" style="margin:0;"
+            onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').innerText='מעבד עם Claude…';">
+        <button type="submit" class="btn btn-lg" {% if _locked %}disabled style="opacity:0.5;cursor:not-allowed;"{% endif %}>
+          {% if brief.status == 'ready_for_manager' %}אושר ✓
+          {% elif brief.status == 'reviewed' %}ממתין לסקירה
+          {% elif brief.status == 'submitted' %}נשלח ✓
+          {% else %}שלח לאישור ←{% endif %}
         </button>
       </form>
     </div>

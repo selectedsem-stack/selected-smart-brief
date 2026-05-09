@@ -55,13 +55,19 @@ def _classify_platforms(platforms: list[str]) -> tuple[str, str]:
 
 
 def _section_data(db, brief_id: str, dept: str) -> dict:
+    """Load section data with polished fields overlaid on top of originals."""
     row = db.execute(
-        "SELECT data FROM sections WHERE brief_id = ? AND dept = ?",
+        "SELECT data, data_polished FROM sections WHERE brief_id = ? AND dept = ?",
         (brief_id, dept),
     ).fetchone()
-    if not row or not row["data"]:
+    if not row:
         return {}
-    return json.loads(row["data"])
+    base = json.loads(row["data"]) if row["data"] else {}
+    polished_raw = row["data_polished"] if "data_polished" in row.keys() else None
+    if polished_raw:
+        polished = json.loads(polished_raw)
+        base = {**base, **polished}  # polished overrides original per-field
+    return base
 
 
 def _build_data_dict(brief, db) -> dict:

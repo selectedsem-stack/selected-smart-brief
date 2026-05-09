@@ -50,13 +50,35 @@ def _resolve_db_path(app) -> Path:
     return db_path
 
 
+_MIGRATIONS = [
+    # AI integration columns (Sprint 4). SQLite has no IF NOT EXISTS for ALTER TABLE,
+    # so we run each in its own try/except. Re-running on an already-migrated DB
+    # is a no-op (the column-already-exists error is swallowed).
+    ("sections", "data_polished",         "ALTER TABLE sections ADD COLUMN data_polished TEXT"),
+    ("briefs",   "consistency_warnings",  "ALTER TABLE briefs ADD COLUMN consistency_warnings TEXT"),
+    ("briefs",   "ai_status",             "ALTER TABLE briefs ADD COLUMN ai_status TEXT DEFAULT 'pending'"),
+]
+
+
+def _column_exists(conn, table: str, column: str) -> bool:
+    rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
+    return any(r[1] == column for r in rows)
+
+
+def _run_migrations(conn):
+    for table, column, sql in _MIGRATIONS:
+        if not _column_exists(conn, table, column):
+            conn.execute(sql)
+    conn.commit()
+
+
 def init_db(app):
     db_path = _resolve_db_path(app)
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(db_path)
     conn.executescript(SCHEMA)
-    conn.commit()
+    _run_migrations(conn)
     conn.close()
 
     @app.teardown_appcontext

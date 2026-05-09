@@ -44,6 +44,14 @@
     @media screen { body { padding: 14mm 0; } }
     @page { size: A4 landscape; margin: 0; }
     @media print {
+      /* Tell the browser to keep all backgrounds and colors when printing
+         to PDF. Without this, Chrome/Edge strip background-color and
+         background-image to "save ink" — orange panels, dark headers,
+         icon tiles all disappear and white-on-dark logos become invisible. */
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       body { background: none; padding: 0; }
       .page { margin: 0; page-break-after: always; break-after: page; width: 297mm; min-height: 210mm; height: 210mm; }
       .no-print { display: none !important; }

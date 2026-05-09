@@ -11,6 +11,7 @@ from ..db import get_db
 from ..services.qr import qr_data_uri
 from ..services.templates_loader import load_template, get_department, list_department_keys
 from ..services.brief_renderer import render_brief_html
+from ..services import validator
 
 
 bp = Blueprint("public", __name__)
@@ -184,27 +185,106 @@ def brief_preview(brief_id):
 
 @bp.route("/b/<brief_id>/submit", methods=["POST"])
 def submit_for_approval(brief_id):
+    """Run the 3 AI layers (validate → polish → consistency) and route the
+    user to /review. Falls back to plain status='submitted' if no API key."""
     brief = _get_brief(brief_id)
-    departments = json.loads(brief["departments"])
     db = get_db()
 
-    # Confirm all sections have data
+    # Layer 1: required-field validation (no AI)
+    missing = validator.validate_required(brief, db)
+    if missing:
+        labels = " · ".join(m["label_he"] for m in missing[:5])
+        more = f" (ועוד {len(missing) - 5})" if len(missing) > 5 else ""
+        flash(f"חסרים שדות חובה: {labels}{more}", "error")
+        return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
+
+    # No API key → fall back to old behavior
+    if not current_app.config.get("AI_AVAILABLE"):
+        db.execute(
+            "UPDATE briefs SET status = 'submitted', submitted_at = ? WHERE id = ?",
+            (_now_iso(), brief_id),
+        )
+        db.commit()
+        flash("הבריף נשלח. הערה: Claude API לא מחובר — לא בוצעו ליטוש או בדיקת עקביות.", "info")
+        return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
+
+    # Layers 2 + 3: polish + consistency
+    db.execute("UPDATE briefs SET ai_status = 'running' WHERE id = ?", (brief_id,))
+    db.commit()
+    try:
+        validator.polish_brief(brief, db)
+        warnings = validator.check_consistency(brief, db)
+        db.execute(
+            """UPDATE briefs
+                  SET status = 'reviewed',
+                      submitted_at = ?,
+                      ai_status = 'ready',
+                      consistency_warnings = ?
+                WHERE id = ?""",
+            (_now_iso(), json.dumps(warnings, ensure_ascii=False), brief_id),
+        )
+        db.commit()
+        return redirect(url_for("public.brief_review", brief_id=brief_id))
+    except Exception as e:
+        current_app.logger.exception("AI processing failed")
+        db.execute("UPDATE briefs SET ai_status = 'failed' WHERE id = ?", (brief_id,))
+        db.commit()
+        flash(f"שגיאה בעיבוד AI: {e}. נסה שוב או פנה לתמיכה.", "error")
+        return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
+
+
+@bp.route("/b/<brief_id>/review")
+def brief_review(brief_id):
+    """Show AI polish diff + consistency warnings for operator approval."""
+    brief = _get_brief(brief_id)
+    db = get_db()
+    tpl = load_template(brief["template_id"])
+    departments = json.loads(brief["departments"])
+
+    review_data = []
     for dept in departments:
+        dept_def = tpl["departments"].get(dept)
+        if not dept_def:
+            continue
         sec = db.execute(
-            "SELECT data FROM sections WHERE brief_id = ? AND dept = ?",
+            "SELECT data, data_polished FROM sections WHERE brief_id = ? AND dept = ?",
             (brief_id, dept),
         ).fetchone()
-        if not sec or sec["data"] in ("{}", "", None):
-            flash("לא ניתן לשלוח — יש סקשנים שלא מולאו", "error")
-            return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
+        original = json.loads(sec["data"]) if sec and sec["data"] else {}
+        polished = json.loads(sec["data_polished"]) if sec and sec["data_polished"] else {}
+        review_data.append({
+            "dept": dept,
+            "label_he": dept_def["label_he"],
+            "fields": dept_def["fields"],
+            "original": original,
+            "polished": polished,
+        })
 
-    # Sprint 4 will replace this placeholder with: AI validate → polish → consistency → email manager.
+    warnings_raw = brief["consistency_warnings"] if "consistency_warnings" in brief.keys() else None
+    warnings = json.loads(warnings_raw) if warnings_raw else []
+
+    return render_template(
+        "review.html",
+        brief=brief,
+        review_data=review_data,
+        warnings=warnings,
+    )
+
+
+@bp.route("/b/<brief_id>/accept", methods=["POST"])
+def accept_review(brief_id):
+    """Operator confirms the AI polish — brief becomes ready_for_manager."""
+    _get_brief(brief_id)  # 404 guard
+    db = get_db()
     db.execute(
-        "UPDATE briefs SET status = 'submitted', submitted_at = ? WHERE id = ?",
+        """UPDATE briefs
+              SET status = 'ready_for_manager',
+                  approved_at = ?
+            WHERE id = ?""",
         (_now_iso(), brief_id),
     )
     db.commit()
-    flash("הבריף נשלח לאישור (Sprint 4 בפיתוח — וולידציית AI ואימייל למנהל יחוברו בקרוב)", "success")
+    flash("הבריף אושר ומוכן למנהל. ה-preview משקף את הגרסה המלוטשת.", "success")
     return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
 
 

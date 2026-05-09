@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}סקירת AI — {{ brief.client_name }}{% endblock %}
+
+{% block header_meta %}{{ brief.client_name }}{% endblock %}
+
+{% set SEVERITY_STYLES = {
+  'error':   {'bg': '#fde7e7', 'border': '#d23f3f', 'icon': '⚠'},
+  'warning': {'bg': '#fff4e0', 'border': '#d68a26', 'icon': '!'},
+  'info':    {'bg': '#e8eef7', 'border': '#5b7aa8', 'icon': 'i'},
+} %}
+
+{% block content %}
+<div style="margin-bottom:14px;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+    <span style="display:inline-block;background:var(--success);color:#fff;padding:4px 10px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:0.05em;">AI ✓</span>
+    <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.02em;">סקירת AI</h1>
+  </div>
+  <div style="color:var(--text-soft);font-size:14px;">
+    Claude סיים ליטוש ובדיקת עקביות. עבור על ההצעות, ואשר.
+  </div>
+</div>
+
+{# ── Consistency warnings ── #}
+{% if warnings %}
+<h2 style="font-size:18px;font-weight:700;margin-top:18px;margin-bottom:10px;">
+  אזהרות עקביות ({{ warnings|length }})
+</h2>
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+  {% for w in warnings %}
+    {% set s = SEVERITY_STYLES.get(w.severity, SEVERITY_STYLES['info']) %}
+    <div style="background:{{ s.bg }};border-right:4px solid {{ s.border }};border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:{{ s.border }};color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          {{ s.icon }}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:700;color:{{ s.border }};margin-bottom:3px;">
+            {{ w.title }}
+          </div>
+          <div style="font-size:14px;color:var(--text);line-height:1.55;">
+            {{ w.message }}
+          </div>
+          {% if w.related_fields %}
+            <div style="font-size:11.5px;color:var(--text-soft);margin-top:8px;letter-spacing:0.04em;">
+              שדות: {{ w.related_fields|join(' · ') }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% else %}
+<div style="background:#e7f5ea;border-right:4px solid var(--success);border-radius:10px;padding:14px 16px;margin-bottom:24px;">
+  <div style="font-size:14.5px;font-weight:600;color:var(--success);">✓ Claude לא איתר סתירות בין הסקשנים</div>
+</div>
+{% endif %}
+
+{# ── Polish diff ── #}
+<h2 style="font-size:18px;font-weight:700;margin-top:24px;margin-bottom:14px;">
+  שיפורי ניסוח
+</h2>
+
+{% set ns = namespace(any_polished=false) %}
+{% for sec in review_data %}
+  <div style="margin-bottom:20px;">
+    <div style="font-size:14px;font-weight:700;color:var(--orange-dark);letter-spacing:0.04em;text-transform:uppercase;margin-bottom:10px;">
+      {{ sec.label_he }}
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      {% for f in sec.fields %}
+        {% set orig = sec.original.get(f.id, '') %}
+        {% set pol = sec.polished.get(f.id, '') %}
+        {% if orig %}
+          {% if pol and pol != orig %}
+            {% set ns.any_polished = true %}
+            <div style="background:#fff;border:1.5px solid var(--gray-line);border-radius:10px;padding:14px 16px;">
+              <div style="font-size:13px;font-weight:600;color:var(--text-mid);margin-bottom:8px;">{{ f.label_he }}</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div style="background:var(--gray-bg);border-radius:8px;padding:10px 12px;">
+                  <div style="font-size:10.5px;font-weight:700;color:var(--text-soft);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px;">מקור</div>
+                  <div style="font-size:13.5px;color:var(--text-mid);line-height:1.55;white-space:pre-wrap;">{{ orig }}</div>
+                </div>
+                <div style="background:#fdf3eb;border-radius:8px;padding:10px 12px;border:1px solid #f4d2b6;">
+                  <div style="font-size:10.5px;font-weight:700;color:var(--orange-dark);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px;">לאחר ליטוש</div>
+                  <div style="font-size:13.5px;color:var(--text);line-height:1.55;white-space:pre-wrap;">{{ pol }}</div>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#f9f9f7;border:1px solid var(--gray-line);border-radius:8px;padding:8px 14px;">
+              <div style="font-size:13px;font-weight:500;color:var(--text-mid);">{{ f.label_he }}</div>
+              <div style="font-size:11.5px;color:var(--text-soft);letter-spacing:0.04em;">לא שונה</div>
+            </div>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+
+{% if not ns.any_polished %}
+<div style="background:#f9f9f7;border:1px dashed var(--gray-line);border-radius:10px;padding:18px;text-align:center;color:var(--text-soft);font-size:14px;margin-top:6px;">
+  Claude לא ראה צורך בליטוש — הניסוחים כבר ברמה טובה.
+</div>
+{% endif %}
+
+{# ── Action bar ── #}
+<div style="margin-top:32px;padding:22px;background:#fff;border-radius:12px;box-shadow:var(--shadow-md);display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+  <a href="{{ url_for('public.brief_preview', brief_id=brief.id) }}" target="_blank" class="btn btn-outline">
+    👁 תצוגה מקדימה של המסמך
+  </a>
+  <a href="{{ url_for('public.brief_dashboard', brief_id=brief.id) }}" class="btn btn-outline">
+    ↩ חזור לעריכה
+  </a>
+  <form method="post" action="{{ url_for('public.accept_review', brief_id=brief.id) }}" style="margin:0;margin-right:auto;">
+    <button type="submit" class="btn btn-lg">✓ אשר וסמן מוכן למנהל</button>
+  </form>
+</div>
+{% endblock %}
