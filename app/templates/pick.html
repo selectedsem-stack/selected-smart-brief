@@ -12,6 +12,38 @@
 } %}
 
 {% block content %}
+
+{# ── Brief was already submitted by operator → satisfying done screen ── #}
+{% if brief.status in ('submitted', 'reviewed', 'ready_for_manager', 'final') %}
+
+<div class="picker-finished">
+  <div class="picker-finished-burst">
+    <div class="picker-finished-check">✓</div>
+  </div>
+  <h1 class="picker-finished-title">סיימנו!</h1>
+  <p class="picker-finished-sub">
+    הבריף של <strong>{{ brief.client_name }}</strong> נשלח לאישור.
+  </p>
+  <p class="picker-finished-byline">
+    תודה על הזמן · בהצלחה לכולנו 🧡
+  </p>
+
+  <div class="picker-finished-status">
+    {% if brief.status == 'submitted' %}
+      ✓ נשלח · ממתין לעיבוד
+    {% elif brief.status == 'reviewed' %}
+      ✓ נשלח · Claude סיים ליטוש · ממתין לאישור מנהל
+    {% elif brief.status == 'ready_for_manager' %}
+      ✓ נשלח · ממתין לאישור מנהל
+    {% elif brief.status == 'final' %}
+      🎉 הבריף אושר סופית ע"י המנהל
+    {% endif %}
+  </div>
+</div>
+
+{% else %}
+
+{# ── Normal picker for filling sections ── #}
 <div style="margin-bottom:8px;">
   <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.02em;line-height:1.15;">
     {{ brief.client_name }}
@@ -57,4 +89,6 @@
   </div>
   <div>{{ completed }} מתוך {{ total }} הושלמו</div>
 </div>
+
+{% endif %}
 {% endblock %}
