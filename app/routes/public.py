@@ -121,7 +121,10 @@ def brief_dashboard(brief_id):
     missing_count = sum(1 for s in sections_status if not s["has_data"])
 
     base_url = current_app.config["BASE_URL"].rstrip("/")
-    brief_public_url = f"{base_url}{url_for('public.brief_dashboard', brief_id=brief_id)}"
+    # QR points to the participant picker — operators land here on the dashboard
+    # via direct URL, but team members scanning a phone get a clean "who are you?"
+    # screen instead of all this dashboard chrome.
+    brief_public_url = f"{base_url}{url_for('public.brief_picker', brief_id=brief_id)}"
 
     return render_template(
         "brief_dashboard.html",
@@ -131,6 +134,42 @@ def brief_dashboard(brief_id):
         missing_count=missing_count,
         qr_uri=qr_data_uri(brief_public_url),
         share_url=brief_public_url,
+    )
+
+
+@bp.route("/b/<brief_id>/pick")
+def brief_picker(brief_id):
+    """Participant landing page — what the QR opens on a phone."""
+    brief = _get_brief(brief_id)
+    template_id = brief["template_id"]
+    tpl = load_template(template_id)
+    departments = json.loads(brief["departments"])
+
+    db = get_db()
+    sections_status = []
+    for dept in departments:
+        sec = db.execute(
+            "SELECT * FROM sections WHERE brief_id = ? AND dept = ?",
+            (brief_id, dept),
+        ).fetchone()
+        sections_status.append({
+            "dept": dept,
+            "label_he": tpl["departments"][dept]["label_he"],
+            "has_data": bool(sec and sec["data"] not in ("{}", "", None)),
+            "filled_at": sec["filled_at"] if sec else None,
+        })
+
+    completed = sum(1 for s in sections_status if s["has_data"])
+    total = len(sections_status)
+    progress_pct = int(round(completed / total * 100)) if total else 0
+
+    return render_template(
+        "pick.html",
+        brief=brief,
+        sections_status=sections_status,
+        completed=completed,
+        total=total,
+        progress_pct=progress_pct,
     )
 
 
@@ -223,7 +262,7 @@ def participant_form(brief_id, dept):
         )
         db.commit()
         flash("נשמר בהצלחה", "success")
-        return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
+        return redirect(url_for("public.brief_picker", brief_id=brief_id))
 
     return render_template(
         "participant.html",

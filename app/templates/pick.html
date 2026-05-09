@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ brief.client_name }} — בחר סקשן{% endblock %}
+
+{% block header_meta %}{{ brief.client_name }}{% endblock %}
+
+{# Display copy for each department — kept here (not in fields.json) since it's
+   purely UI/presentation, not data. #}
+{% set DEPT_DESCRIPTIONS = {
+  'about': 'פרטי החברה, איש קשר ובידולים',
+  'seo':   'ביטויים, אסטרטגיית תוכן ונכסים',
+  'ppc':   'תקציב, פלטפורמות וקהל יעד',
+} %}
+
+{% block content %}
+<div style="margin-bottom:8px;">
+  <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.02em;line-height:1.15;">
+    {{ brief.client_name }}
+  </h1>
+  <div style="color:var(--text-soft);font-size:13.5px;margin-top:4px;letter-spacing:0.02em;">
+    בריף · סורק/ת מהפגישה
+  </div>
+</div>
+
+<h2 style="font-size:16px;font-weight:700;color:var(--text-mid);margin-top:20px;">
+  איזה סקשן את/ה ממלא/ת?
+</h2>
+
+<div class="picker-list">
+  {% for sec in sections_status %}
+    <a class="picker-card {% if sec.has_data %}filled{% endif %}"
+       href="{{ url_for('public.participant_form', brief_id=brief.id, dept=sec.dept) }}">
+      <div class="marker">
+        {% if sec.has_data %}✓{% else %}←{% endif %}
+      </div>
+      <div class="text">
+        <div class="label">{{ sec.label_he }}</div>
+        <div class="desc">{{ DEPT_DESCRIPTIONS.get(sec.dept, '') }}</div>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+
+<div class="picker-progress">
+  <div class="bar">
+    <div class="bar-fill" style="width: {{ progress_pct }}%;"></div>
+  </div>
+  <div>{{ completed }} מתוך {{ total }} הושלמו</div>
+</div>
+{% endblock %}
