@@ -6,127 +6,159 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Smart Brief** — internal web system for Selected Digital Marketing Agency. Replaces a paper-based client onboarding process (printed PPTX + handwritten notes → typed manually → passed between colleagues → manager approves → PDF via WhatsApp) with a digital workflow that goes from meeting end to PDF in under 10 minutes.
+**Smart Brief** — internal Hebrew-RTL web app for Selected Digital Marketing Agency. Replaces a paper-based client onboarding (printed PPTX → handwritten notes → manual typing → managerial approval → PDF) with a digital flow that runs in under 10 minutes.
 
-Full spec: `אפיון-smart-brief.md`
+**Deployed:** `https://selected-smart-brief.onrender.com` (Basic Auth gated; password lives in Render env)
+**GitHub:** `https://github.com/selectedsem-stack/selected-smart-brief` (private)
+**Spec:** [אפיון-smart-brief.md](./אפיון-smart-brief.md) · **Project summary:** [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)
+
+Sprints 1–4 done and deployed. Sprint 5 (custom domain + custom email sender) is gated by DNS work and is optional polish.
 
 ---
 
-## Current State
-
-**Design/prototype phase — no application code yet.** What exists:
-
-| File | What it is |
-|------|-----------|
-| `build_brief.py` | Python script that generates `brief-sample.html` — the reference design for what the output document looks like |
-| `brief-sample.html` | Generated output — 8-page A4-landscape HTML brief for client מדגה עין המפרץ (real sample data) |
-| `smart-brief-presentation.html` | 6-slide HTML pitch deck for manager approval of the project |
-| `אפיון-smart-brief.md` | Full product spec in Hebrew |
-
-### Regenerating the sample brief
-
-```bash
-python build_brief.py
-# Output: brief-sample.html (~1.2MB, self-contained)
-```
-
-Requires `.pptx-extract/` (team photo asset). If it's missing:
+## Common commands
 
 ```powershell
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::ExtractToDirectory(
-  "C:\Users\SEMSELECTED\Desktop\טמפלייטים ומדריכים\טמפלייט סיכום בריף.pptx",
-  ".pptx-extract"
-)
+# Setup (Windows / PowerShell)
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# Run dev server (http://localhost:5000)
+python run.py
+
+# Render the brief output template against full sample data and open in browser
+python dev_preview.py
+# → writes data/preview-local.html and launches default browser
+
+# Inspect SQLite (manager tokens, statuses, AI logs)
+python -c "import sqlite3; c=sqlite3.connect('data/briefs.db'); c.row_factory=sqlite3.Row; [print(dict(r)) for r in c.execute('SELECT id, client_name, status, manager_token FROM briefs ORDER BY created_at DESC LIMIT 5')]"
 ```
 
-Then run `python build_brief.py` again.
+DB migrations run automatically on `init_db()` (idempotent — safe to redeploy). To add a new migration, append to `_MIGRATIONS` in `app/db.py` with a `(table, column, ALTER SQL)` tuple.
+
+`build_brief.py` is the legacy hardcoded reference output; the live renderer is `brief_renderer.py` driven by `brief_templates/seo-ppc-brief/output.html.j2`.
 
 ---
 
-## Logo Assets
+## Architecture — flow
 
-All official Selected logos are at `Q:\selected logo\`. Key files:
+The app has **two audiences and three URL spaces**:
 
-| Variable in `build_brief.py` | File | Use |
+| URL space | Audience | Auth |
 |---|---|---|
-| `darknb_src` | `לוגו-חדש\sel-darknb.png` | Dark wordmark, transparent bg — for orange/light surfaces (apply CSS `filter: brightness(0) invert(1)` to get white version on dark surfaces) |
-| `full_src` | `SELECTED LOGO\0 FINAL MATERIALS\LOGO-2020-SELECTED-BLACK.png` | Full logo with "Digital Marketing Agency" — for white/light footers |
-| `icon_src` | `2020 BRAND\LOGO VECTOR\LOGO 2020 SELECTED-01.png` | Round S icon — decorative watermark use |
+| `/` `/new` `/b/<id>` `/b/<id>/pick` `/b/<id>/<dept>` | Operator + participants (in-meeting) | Basic Auth (demo gate) |
+| `/m/<token>/...` | Manager (remote) | Token in URL is the auth — Basic Auth bypassed |
+| `/healthz` | Render health check | Always open |
 
-**Logo placement rule in the brief:**
-- Dark header bars → `darknb_src` + `filter: brightness(0) invert(1)` = white logo
-- Orange panels (cover, intro pages) → `darknb_src` + `filter: brightness(0) invert(1)` = white logo  
-- White footers → `full_src`, no filter
-
----
-
-## Output Document Design
-
-The brief is a self-contained HTML file with all assets base64-embedded. Pages are A4 landscape (297mm × 210mm). Print to PDF via browser Ctrl+P.
-
-**Page structure (8 pages):**
-1. Cover — split panel: team photo left, orange panel right with client name
-2. About client — contact row + 3-column info card grid
-3. SEO Intro — full-bleed split: orange brand panel + dark facts panel
-4. SEO Fields — 2-column card grid
-5. SEO Process — 2-column numbered steps grid
-6. PPC Intro — full-bleed split: same structure as SEO Intro
-7. PPC Fields — 3-column card grid + dark notes box
-8. PPC Process — 2-column numbered steps grid
-
-**CSS design tokens:**
-- `--orange: #E06820` / `--dark: #141414`
-- Font: Heebo (Google Fonts), weights 300/400/500/700/900
-- Spacing: mm units throughout (for print accuracy)
-
----
-
-## Planned Application Stack
+**Brief status lifecycle:**
 
 ```
-smart_brief/
-  app.py              ← Flask entry point
-  brief_manager.py    ← SQLite session management
-  validator.py        ← Claude API: validate + polish text
-  sender.py           ← Email to manager
-  templates/          ← Jinja2 HTML (form, manager review)
-
-templates/
-  seo-ppc-brief/
-    fields.json       ← Field definitions per department
-  web-brief/          ← Phase 2
-
-data/briefs.db        ← SQLite
-.env                  ← ANTHROPIC_API_KEY, SMTP_USER, SMTP_PASS, MANAGER_EMAIL, SECRET_KEY
+draft → reviewed → ready_for_manager → final
+        (AI ran)   (operator accepted)   (manager finalized)
 ```
 
-**`fields.json` schema:**
-```json
-{
-  "section": "ppc",
-  "fields": [
-    { "id": "ppc_budget", "label_he": "תקציב לכל פלטפורמה", "required": true, "type": "text" }
-  ]
-}
-```
+There's also a fallback path for when AI is unavailable: `draft → submitted → final` (operator opens the manager link manually and finalizes).
 
-Adding a new brief type = new folder + `fields.json`. No code changes.
+**Where each route lives:**
+- [app/routes/public.py](./app/routes/public.py) — operator + participant routes (dashboard, picker, form, submit, review, accept)
+- [app/routes/manager.py](./app/routes/manager.py) — manager routes (`/m/<token>/{view,edit,prompt,finalize,preview}`)
+- Auth bypass for `/m/*` paths is in [app/auth.py](./app/auth.py:36).
 
 ---
 
-## Key Design Decisions
+## Architecture — data
 
-- **HTML output, not PPTX** — RTL Hebrew in CSS is reliable; python-pptx RTL is not. Manager opens HTML in browser → Ctrl+P → PDF.
-- **Claude does 3 things:** (1) validate required fields, (2) polish informal Hebrew text to professional copywriting standard, (3) check cross-section consistency (e.g., audience described in SEO matches PPC targeting).
-- **Manager has two edit modes:** direct field editing OR Claude prompt ("add to the SEO section that the client has never done SEO before") → Claude writes to the correct field.
-- **Phone numbers stored from day one** — not needed in Phase 1, but collected now for the Phase 2 WhatsApp API integration.
-- **No user auth in Phase 1** — session URL is the access mechanism. Manager link is a separate long-lived UUID.
+**SQLite schema (3 tables):**
+
+- `briefs` — id (UUID), client_name, template_id, departments (JSON array), status, manager_token (separate UUID for /m/ auth), timestamps, `consistency_warnings` (JSON), `manager_email_sent_at`, `ai_status`
+- `sections` — `(brief_id, dept)` PK; stores `data` (original JSON) and `data_polished` (Claude-edited JSON) — manager edits **overwrite `data_polished`**, never `data`. The renderer overlays polished onto data per-field.
+- `ai_log` — append-only log of every Claude call: action, tokens in/out, timestamp.
+
+**Field schemas** are NOT in the DB — they live in `brief_templates/<template_id>/fields.json`. To add a brief type (e.g., a "web design" brief), drop a new folder with its own `fields.json` + `output.html.j2`. No code changes needed; the system walks departments dynamically.
 
 ---
 
-## Phase 2 (out of scope now)
+## Architecture — services
 
-- WhatsApp API: auto-create group with meeting participants + send PDF
-- Web/UX design brief template (different field set)
-- Client credential retrieval via WhatsApp agent
+Four services in `app/services/` — each is **graceful by design** (returns a neutral value, doesn't raise, when its dependency is missing):
+
+| Service | Role | Graceful fallback |
+|---|---|---|
+| [validator.py](./app/services/validator.py) | Claude AI: validate / polish / consistency / manager_prompt | Returns `None`/`[]` if `ANTHROPIC_API_KEY` empty |
+| [brief_renderer.py](./app/services/brief_renderer.py) | DB → 8-page HTML via Jinja2 (overlays `data_polished` on top of `data`) | Always works (no external deps at render time) |
+| [mailer.py](./app/services/mailer.py) | Resend API: send manager-link email | Returns `(False, None)` if `RESEND_API_KEY` or `MANAGER_EMAIL` empty |
+| [qr.py](./app/services/qr.py) | Generate QR code as `data:image/png;base64,...` | n/a |
+
+**Design rule:** when a feature degrades, the user sees an explicit flash message explaining what happened and how to proceed manually. Never silently swallow.
+
+---
+
+## Key design decisions
+
+- **HTML output, not PPTX.** RTL Hebrew in Jinja2/CSS is reliable; python-pptx RTL was not. Manager opens HTML → Ctrl+P → PDF. Print colors preserved with `print-color-adjust: exact !important` (line ~63 of `output.html.j2`).
+- **Two separate UUIDs per brief.** `briefs.id` for operators (URL: `/b/<id>`), `briefs.manager_token` for managers (URL: `/m/<token>`). The manager token is the auth — bypasses Basic Auth — so the email link works without a password.
+- **`data_polished` overlays `data`.** The renderer merges them per-field with polished overriding original. This is why `manager_edit` writes to `data_polished` (preserves original input).
+- **Single-call Claude per layer.** Polish sends the entire brief in one Claude call (returns JSON of polished fields); consistency sends the brief in another single call (returns warnings). Keeps total latency under 15s and works inside Render's 60s gunicorn timeout.
+- **Prompt caching on system prompts.** All four `validator.py` functions use `cache_control: {"type": "ephemeral"}` on the system prompt → ~80% cost reduction on follow-up calls within 5 min.
+- **No participant tracking.** `participant_meta` was removed from `fields.json` — the team contact (name + phone) lives in the `about` section. Other sections don't ask "who are you" because it adds friction without value.
+- **Picker switches to a celebration screen** when `brief.status >= submitted`. The picker isn't just a section selector — it's the participant's natural home, so it shows them the right state for whatever phase the brief is in.
+
+---
+
+## Pending — what's needed to reach 100%
+
+These are env vars on Render (and locally in `.env`); the code is already wired:
+
+| Variable | Purpose | Status |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | Activates polish + consistency + manager prompt | **Pending** — Mor's $20 top-up |
+| `RESEND_API_KEY` | Activates auto-emails to manager | User has the key (not yet set on Render) |
+| `MANAGER_EMAIL` | Recipient address for approval emails | Will be `mor@selected.co.il` once tested |
+| `RESEND_FROM_EMAIL` | Sender — defaults to `onboarding@resend.dev`; later `brief@selected.co.il` | Default works for pilot |
+| `BASE_URL` | Used in QR codes and email links | Already set on Render |
+| `ACCESS_PASSWORD` | Demo gate password | Already set on Render |
+
+The app handles every combination of these missing/present gracefully — the dashboard banner explains what's active.
+
+**Hosting decision (out of scope for code — env-level):** stay on Render Free (sleeps after 15 min), upgrade to Render Starter ($7/m), or migrate to Selected's own server ($0 extra, IT setup needed). The user has not committed yet.
+
+---
+
+## Branding
+
+Selected logos live in **two locations** for two purposes:
+- `assets/logos/` — used by `brief_renderer.py` to base64-embed in the brief output HTML
+- `app/static/logos/` — served by Flask for the in-app header (`base.html`) and any other UI references
+
+Both folders are populated and committed. If updating brand assets, update both.
+
+The HTML brief output uses the dark wordmark with `filter: brightness(0) invert(1)` to render white on dark. The web app header does the same.
+
+---
+
+## Related docs / artifacts
+
+- [PRODUCT.md](./PRODUCT.md) — brand voice, audience, anti-references
+- [אפיון-smart-brief.md](./אפיון-smart-brief.md) — full Hebrew product spec
+- [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md) — Hebrew presentation summary (for humans)
+- [summary-presentation.html](./summary-presentation.html) — 11-slide HTML deck for showing Mor
+- [smart-brief-presentation.html](./smart-brief-presentation.html) — original pitch deck (pre-build approval)
+- [build_brief.py](./build_brief.py) — legacy hardcoded sample renderer; **don't edit** unless needed for visual reference
+
+The `/skills/project-summary` skill (in user's `~/.claude/skills/`) was updated with the design rules learned here: strict RTL, leftward flow arrows, RTL nav with swapped buttons, copyright in every artifact, brand logos in 3 places minimum, Heebo font with full weight range, WCAG AA contrast on dark backgrounds.
+
+---
+
+## Deploying
+
+```bash
+# All deploys are auto-triggered by git push to main
+git add .
+git commit -m "..."
+git push
+# → Render auto-deploys within 3 min, watching the main branch
+```
+
+The Render config is in [render.yaml](./render.yaml) (Blueprint format). It defines the web service, build/start commands, region (Frankfurt — closest to IL), and which env vars are auto-generated vs. manually-set.
+
+Health check: Render polls `/healthz` every 30s; that route bypasses Basic Auth (see `app/auth.py`).
