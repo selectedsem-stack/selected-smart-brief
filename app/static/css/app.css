@@ -443,6 +443,209 @@ a:hover { text-decoration: underline; }
   transition: width 0.3s ease;
 }
 
+/* ── Manager screen (Sprint 3) ── */
+.manager-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.manager-status {
+  display: inline-block;
+  padding: 5px 14px;
+  background: var(--orange-soft);
+  color: var(--orange-dark);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 999px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.manager-prompt-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--dark);
+  color: #fff;
+  padding: 16px 20px;
+  margin: 18px -24px 22px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+}
+.manager-prompt-bar label {
+  display: block;
+  font-size: 13px;
+  color: var(--orange);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+.manager-prompt-row {
+  display: flex;
+  gap: 8px;
+}
+.manager-prompt-row input {
+  flex: 1;
+  padding: 11px 14px;
+  border-radius: 8px;
+  border: none;
+  font-family: inherit;
+  font-size: 15px;
+  direction: rtl;
+  background: #fff;
+}
+.manager-prompt-row input:focus {
+  outline: 2px solid var(--orange);
+  outline-offset: 1px;
+}
+.manager-prompt-row button {
+  padding: 11px 22px;
+  background: var(--orange);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14.5px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.manager-prompt-row button:hover { background: var(--orange-dark); }
+.manager-prompt-row button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.manager-prompt-status {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.65);
+  margin-top: 8px;
+  min-height: 18px;
+  letter-spacing: 0.02em;
+}
+.manager-prompt-status.thinking { color: rgba(255,200,140,0.9); }
+.manager-prompt-status.success  { color: #6ee090; }
+.manager-prompt-status.error    { color: #ff8c8c; }
+
+.manager-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-md);
+}
+.manager-section h2 {
+  font-size: 13.5px;
+  color: var(--orange-dark);
+  margin-bottom: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.manager-field {
+  position: relative;
+  margin-bottom: 14px;
+}
+.manager-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: var(--text);
+}
+.manager-field input,
+.manager-field textarea,
+.manager-field select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--gray-line);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14.5px;
+  direction: rtl;
+  background: #fff;
+  transition: border-color 0.15s, background 0.4s;
+}
+.manager-field input:focus,
+.manager-field textarea:focus,
+.manager-field select:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(232,114,42,0.15);
+}
+.manager-field textarea { min-height: 78px; resize: vertical; line-height: 1.5; }
+.manager-field textarea[data-list="1"] { min-height: 100px; }
+
+.save-indicator {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: transparent;
+  pointer-events: none;
+  transition: color 0.2s;
+}
+.save-indicator.saved { color: var(--success); }
+.save-indicator.saving { color: var(--orange); }
+.save-indicator.error { color: var(--error); }
+
+.manager-field.flash-updated input,
+.manager-field.flash-updated textarea,
+.manager-field.flash-updated select {
+  background: #fff5e9;
+  border-color: var(--orange);
+}
+
+.manager-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+  background: #fff;
+  padding: 16px 20px;
+  margin: 28px -24px 0;
+  border-top: 1px solid var(--gray-line);
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.06);
+}
+
+@media (max-width: 540px) {
+  .manager-prompt-bar { margin-left: -14px; margin-right: -14px; padding: 14px 14px; }
+  .manager-section { padding: 16px 14px; }
+  .manager-action-bar { margin-left: -14px; margin-right: -14px; padding: 14px; }
+}
+
+/* Manager-link callout on operator dashboard (when status=ready_for_manager) */
+.mgr-link-box {
+  background: #fff;
+  border: 1.5px solid var(--orange);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mgr-link-box .mgr-link-url {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  background: var(--gray-bg);
+  padding: 8px 10px;
+  border-radius: 6px;
+  word-break: break-all;
+  direction: ltr;
+  text-align: left;
+}
+.mgr-link-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 /* ── Footer ── */
 .app-footer {
   text-align: center;

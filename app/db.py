@@ -52,11 +52,12 @@ def _resolve_db_path(app) -> Path:
 
 _MIGRATIONS = [
     # AI integration columns (Sprint 4). SQLite has no IF NOT EXISTS for ALTER TABLE,
-    # so we run each in its own try/except. Re-running on an already-migrated DB
-    # is a no-op (the column-already-exists error is swallowed).
-    ("sections", "data_polished",         "ALTER TABLE sections ADD COLUMN data_polished TEXT"),
-    ("briefs",   "consistency_warnings",  "ALTER TABLE briefs ADD COLUMN consistency_warnings TEXT"),
-    ("briefs",   "ai_status",             "ALTER TABLE briefs ADD COLUMN ai_status TEXT DEFAULT 'pending'"),
+    # so each migration is guarded by _column_exists check and re-running is a no-op.
+    ("sections", "data_polished",          "ALTER TABLE sections ADD COLUMN data_polished TEXT"),
+    ("briefs",   "consistency_warnings",   "ALTER TABLE briefs ADD COLUMN consistency_warnings TEXT"),
+    ("briefs",   "ai_status",              "ALTER TABLE briefs ADD COLUMN ai_status TEXT DEFAULT 'pending'"),
+    # Manager flow (Sprint 3)
+    ("briefs",   "manager_email_sent_at",  "ALTER TABLE briefs ADD COLUMN manager_email_sent_at TEXT"),
 ]
 
 

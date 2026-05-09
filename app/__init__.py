@@ -16,6 +16,8 @@ def create_app() -> Flask:
     init_basic_auth(app)
 
     from .routes.public import bp as public_bp
+    from .routes.manager import bp as manager_bp
     app.register_blueprint(public_bp)
+    app.register_blueprint(manager_bp)
 
     return app

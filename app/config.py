@@ -15,4 +15,6 @@ def load_config() -> dict:
         "AI_AVAILABLE": bool(os.getenv("ANTHROPIC_API_KEY")),
         "ACCESS_USER": os.getenv("ACCESS_USER", "selected"),
         "ACCESS_PASSWORD": os.getenv("ACCESS_PASSWORD", ""),
+        "RESEND_API_KEY": os.getenv("RESEND_API_KEY", ""),
+        "RESEND_FROM_EMAIL": os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev"),
     }

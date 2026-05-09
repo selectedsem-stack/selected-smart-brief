@@ -23,5 +23,11 @@ services:
         sync: false             # set after first deploy: https://<service>.onrender.com
       - key: ANTHROPIC_API_KEY
         sync: false             # leave empty until Sprint 4
+      - key: RESEND_API_KEY
+        sync: false             # set after signing up at resend.com
+      - key: RESEND_FROM_EMAIL
+        value: onboarding@resend.dev
+      - key: MANAGER_EMAIL
+        sync: false             # the manager who receives approval-link emails
       - key: DEFAULT_TEMPLATE
         value: seo-ppc-brief

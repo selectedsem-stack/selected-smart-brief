@@ -36,6 +36,10 @@ def init_basic_auth(app):
         # /healthz must always be reachable — Render uses it for health checks
         if request.path == "/healthz":
             return None
+        # Manager links are token-protected (UUID in URL is the auth) — bypass
+        # so the manager can open the email link without entering the demo password.
+        if request.path.startswith("/m/"):
+            return None
         if not app.config.get("ACCESS_PASSWORD"):
             return None  # auth disabled — allow through (local dev)
         # Always allow static files (CSS) so the login challenge page styles work

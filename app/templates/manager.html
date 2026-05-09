@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}אישור מנהל — {{ brief.client_name }}{% endblock %}
+
+{% block header_meta %}{{ brief.client_name }}{% endblock %}
+
+{% block content %}
+<div class="manager-header">
+  <div>
+    <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.02em;line-height:1.15;">{{ brief.client_name }}</h1>
+    <div style="color:var(--text-soft);font-size:13.5px;margin-top:4px;">
+      בריף לאישור · ID: {{ brief.id[:8] }}…
+    </div>
+  </div>
+  <span class="manager-status">
+    {% if brief.status == 'final' %}אושר ✓{% else %}בעריכה{% endif %}
+  </span>
+</div>
+
+{# ── STICKY Claude Prompt bar ── #}
+<div class="manager-prompt-bar">
+  <label>💬 בקשה ל-Claude</label>
+  <div class="manager-prompt-row">
+    <input type="text" id="claude-prompt" autocomplete="off"
+           placeholder='למשל: "הוסף לסקשן SEO שהלקוח מעולם לא קידם"'>
+    <button type="button" id="claude-send">שלח</button>
+  </div>
+  <div id="claude-status" class="manager-prompt-status"></div>
+</div>
+
+{# ── Sections with editable fields ── #}
+{% for sec in sections_data %}
+<div class="manager-section">
+  <h2>{{ sec.label_he }}</h2>
+  {% for f in sec.fields %}
+    <div class="manager-field" data-dept="{{ sec.dept }}" data-field-id="{{ f.id }}">
+      <label>{{ f.label_he }}</label>
+      {% set val = sec.field_values.get(f.id, '') %}
+      {% if f.type == 'textarea' %}
+        <textarea>{{ val }}</textarea>
+      {% elif f.type == 'list' %}
+        <textarea data-list="1" placeholder="פריט אחד בכל שורה">{{ val }}</textarea>
+      {% elif f.type == 'select' %}
+        <select>
+          <option value="">— בחר —</option>
+          {% for opt in f.options %}
+            <option value="{{ opt.value }}" {% if val == opt.value %}selected{% endif %}>{{ opt.label_he }}</option>
+          {% endfor %}
+        </select>
+      {% else %}
+        <input type="{{ f.type if f.type in ('text','tel','email','url') else 'text' }}" value="{{ val }}">
+      {% endif %}
+      <span class="save-indicator">✓</span>
+    </div>
+  {% endfor %}
+</div>
+{% endfor %}
+
+{# ── STICKY action bar ── #}
+<div class="manager-action-bar">
+  <a href="{{ url_for('manager.manager_preview', token=brief.manager_token) }}" target="_blank" class="btn btn-outline">
+    👁 תצוגה מקדימה
+  </a>
+  <form method="post" action="{{ url_for('manager.manager_finalize', token=brief.manager_token) }}" style="margin:0;margin-right:auto;">
+    <button type="submit" class="btn btn-lg">✓ אשר וצור מסמך</button>
+  </form>
+</div>
+
+<script>
+(function () {
+  const editUrl = {{ url_for('manager.manager_edit', token=brief.manager_token) | tojson }};
+  const promptUrl = {{ url_for('manager.manager_claude_prompt', token=brief.manager_token) | tojson }};
+
+  // ── Auto-save on blur ──
+  function attachAutoSave(editor) {
+    editor.addEventListener('blur', async () => {
+      const field = editor.closest('.manager-field');
+      const indicator = field.querySelector('.save-indicator');
+      indicator.classList.remove('saved', 'error');
+      indicator.classList.add('saving');
+      try {
+        const resp = await fetch(editUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            dept: field.dataset.dept,
+            field_id: field.dataset.fieldId,
+            value: editor.value,
+          }),
+        });
+        const data = await resp.json();
+        indicator.classList.remove('saving');
+        if (data.ok) {
+          indicator.classList.add('saved');
+          setTimeout(() => indicator.classList.remove('saved'), 1600);
+        } else {
+          indicator.classList.add('error');
+        }
+      } catch (e) {
+        indicator.classList.remove('saving');
+        indicator.classList.add('error');
+      }
+    });
+  }
+  document.querySelectorAll('.manager-field input, .manager-field textarea, .manager-field select')
+    .forEach(attachAutoSave);
+
+  // ── Claude Prompt ──
+  const promptInput = document.getElementById('claude-prompt');
+  const promptStatus = document.getElementById('claude-status');
+  const promptBtn = document.getElementById('claude-send');
+
+  async function sendPrompt() {
+    const text = promptInput.value.trim();
+    if (!text) return;
+    promptBtn.disabled = true;
+    promptStatus.textContent = 'Claude חושב…';
+    promptStatus.className = 'manager-prompt-status thinking';
+    try {
+      const resp = await fetch(promptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: text }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        promptStatus.textContent = 'שגיאה: ' + (data.message || data.error || 'לא ידוע');
+        promptStatus.className = 'manager-prompt-status error';
+        return;
+      }
+      const a = data.applied;
+      const target = document.querySelector(
+        `.manager-field[data-dept="${a.dept}"][data-field-id="${a.field_id}"]`
+      );
+      if (target) {
+        const editor = target.querySelector('input, textarea, select');
+        if (editor) editor.value = a.new_value;
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target.classList.add('flash-updated');
+        setTimeout(() => target.classList.remove('flash-updated'), 2200);
+        promptStatus.textContent = `✓ עודכן: ${a.dept} → ${a.field_id}`;
+        promptStatus.className = 'manager-prompt-status success';
+        promptInput.value = '';
+      } else {
+        promptStatus.textContent = `Claude עדכן ${a.dept}.${a.field_id} אבל השדה לא נמצא במסך — רענן את הדף`;
+        promptStatus.className = 'manager-prompt-status error';
+      }
+    } catch (e) {
+      promptStatus.textContent = 'שגיאה ברשת';
+      promptStatus.className = 'manager-prompt-status error';
+    } finally {
+      promptBtn.disabled = false;
+    }
+  }
+  promptBtn.addEventListener('click', sendPrompt);
+  promptInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendPrompt(); }
+  });
+})();
+</script>
+{% endblock %}

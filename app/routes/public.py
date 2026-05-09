@@ -12,6 +12,7 @@ from ..services.qr import qr_data_uri
 from ..services.templates_loader import load_template, get_department, list_department_keys
 from ..services.brief_renderer import render_brief_html
 from ..services import validator
+from ..services import mailer
 
 
 bp = Blueprint("public", __name__)
@@ -126,6 +127,7 @@ def brief_dashboard(brief_id):
     # via direct URL, but team members scanning a phone get a clean "who are you?"
     # screen instead of all this dashboard chrome.
     brief_public_url = f"{base_url}{url_for('public.brief_picker', brief_id=brief_id)}"
+    manager_link = f"{base_url}{url_for('manager.manager_view', token=brief['manager_token'])}"
 
     return render_template(
         "brief_dashboard.html",
@@ -135,6 +137,7 @@ def brief_dashboard(brief_id):
         missing_count=missing_count,
         qr_uri=qr_data_uri(brief_public_url),
         share_url=brief_public_url,
+        manager_link=manager_link,
     )
 
 
@@ -273,18 +276,39 @@ def brief_review(brief_id):
 
 @bp.route("/b/<brief_id>/accept", methods=["POST"])
 def accept_review(brief_id):
-    """Operator confirms the AI polish — brief becomes ready_for_manager."""
-    _get_brief(brief_id)  # 404 guard
+    """Operator confirms the AI polish — brief becomes ready_for_manager
+    and an email goes out to MANAGER_EMAIL with the manager-token link."""
+    brief = _get_brief(brief_id)
     db = get_db()
     db.execute(
-        """UPDATE briefs
-              SET status = 'ready_for_manager',
-                  approved_at = ?
-            WHERE id = ?""",
-        (_now_iso(), brief_id),
+        "UPDATE briefs SET status = 'ready_for_manager' WHERE id = ?",
+        (brief_id,),
     )
     db.commit()
-    flash("הבריף אושר ומוכן למנהל. ה-preview משקף את הגרסה המלוטשת.", "success")
+
+    # Build the manager link (also shown on the dashboard as fallback)
+    base_url = current_app.config["BASE_URL"].rstrip("/")
+    manager_link = f"{base_url}{url_for('manager.manager_view', token=brief['manager_token'])}"
+
+    sent, error = mailer.send_manager_link(brief, manager_link)
+    if sent:
+        db.execute(
+            "UPDATE briefs SET manager_email_sent_at = ? WHERE id = ?",
+            (_now_iso(), brief_id),
+        )
+        db.commit()
+        flash("הבריף אושר ונשלח אימייל למנהל.", "success")
+    elif error:
+        flash(
+            f"הבריף אושר. שליחת האימייל נכשלה ({error}) — שתף את הלינק ידנית מהדאשבורד.",
+            "warning",
+        )
+    else:
+        # Email intentionally disabled (no key/recipient yet)
+        flash(
+            "הבריף אושר. שליחת אימייל לא מוגדרת כרגע — שתף את הלינק ידנית מהדאשבורד.",
+            "info",
+        )
     return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
 
 
