@@ -147,7 +147,6 @@ def render_brief_html(brief, db, *, show_print_button: bool = True) -> str:
     template = env.get_template("output.html.j2")
     return template.render(
         data=data,
-        team_src=_asset_data_uri("assets/team_photo.jpg", "image/jpeg"),
         logo_src=_asset_data_uri("assets/logos/sel-darknb.png", "image/png"),
         full_src=_asset_data_uri("assets/logos/sel-full-black.png", "image/png"),
         icon_src=_asset_data_uri("assets/logos/sel-icon.png", "image/png"),
