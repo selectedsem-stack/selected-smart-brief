@@ -33,6 +33,9 @@ def init_basic_auth(app):
 
     @app.before_request
     def require_basic_auth():
+        # /healthz must always be reachable — Render uses it for health checks
+        if request.path == "/healthz":
+            return None
         if not app.config.get("ACCESS_PASSWORD"):
             return None  # auth disabled — allow through (local dev)
         # Always allow static files (CSS) so the login challenge page styles work

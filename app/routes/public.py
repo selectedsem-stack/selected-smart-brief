@@ -41,6 +41,12 @@ def home():
     return render_template("home.html")
 
 
+@bp.route("/healthz")
+def healthz():
+    """Health check endpoint — bypasses Basic Auth so Render can ping it."""
+    return "ok", 200, {"Content-Type": "text/plain"}
+
+
 @bp.route("/new", methods=["GET", "POST"])
 def new_brief():
     template_id = current_app.config["DEFAULT_TEMPLATE"]
