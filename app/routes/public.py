@@ -211,20 +211,25 @@ def submit_for_approval(brief_id):
         flash("הבריף נשלח. הערה: Claude API לא מחובר — לא בוצעו ליטוש או בדיקת עקביות.", "info")
         return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
 
-    # Layers 2 + 3: polish + consistency
+    # Layers 2 + 3 + 5: polish + consistency + expert review
     db.execute("UPDATE briefs SET ai_status = 'running' WHERE id = ?", (brief_id,))
     db.commit()
     try:
         validator.polish_brief(brief, db)
         warnings = validator.check_consistency(brief, db)
+        findings = validator.expert_review(brief, db)
         db.execute(
             """UPDATE briefs
                   SET status = 'reviewed',
                       submitted_at = ?,
                       ai_status = 'ready',
-                      consistency_warnings = ?
+                      consistency_warnings = ?,
+                      expert_findings = ?
                 WHERE id = ?""",
-            (_now_iso(), json.dumps(warnings, ensure_ascii=False), brief_id),
+            (_now_iso(),
+             json.dumps(warnings, ensure_ascii=False),
+             json.dumps(findings, ensure_ascii=False),
+             brief_id),
         )
         db.commit()
         return redirect(url_for("public.brief_review", brief_id=brief_id))
@@ -266,11 +271,15 @@ def brief_review(brief_id):
     warnings_raw = brief["consistency_warnings"] if "consistency_warnings" in brief.keys() else None
     warnings = json.loads(warnings_raw) if warnings_raw else []
 
+    findings_raw = brief["expert_findings"] if "expert_findings" in brief.keys() else None
+    findings = json.loads(findings_raw) if findings_raw else []
+
     return render_template(
         "review.html",
         brief=brief,
         review_data=review_data,
         warnings=warnings,
+        findings=findings,
     )
 
 
@@ -312,6 +321,51 @@ def accept_review(brief_id):
     return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
 
 
+import re as _re
+
+_EMAIL_RE = _re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+_URL_RE = _re.compile(r"^(https?://)?([\w\-]+\.)+[\w\-]{2,}(/[^\s]*)?$", _re.IGNORECASE)
+
+
+def _is_valid_il_phone(value: str) -> bool:
+    """Israeli phone — accepts 050-1234567, 0501234567, 03-1234567, +972501234567, etc."""
+    digits = _re.sub(r"[\s\-\(\)]", "", value.strip())
+    if digits.startswith("+"):
+        digits = digits[1:]
+    if not digits.isdigit():
+        return False
+    # Local: 0 + 8 digits (mobile, 05X) or 0 + 8 digits (landline, 02-04, 06-09)
+    if digits.startswith("0") and len(digits) in (9, 10):
+        return digits[1] in "234589" or digits[1:3] in ("50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "72", "73", "74", "76", "77", "78")
+    # International with country code 972
+    if digits.startswith("972") and len(digits) in (11, 12):
+        rest = digits[3:]
+        return rest[0] in "234589" or rest[0:2].startswith("5")
+    return False
+
+
+def _validate_field_format(field_type: str, value: str) -> str | None:
+    """Return error message in Hebrew if value violates the type's format, else None."""
+    if not value:
+        return None
+    v = value.strip()
+    if field_type == "tel" and not _is_valid_il_phone(v):
+        return "מספר טלפון לא תקין (דוגמה: 050-1234567 או 03-1234567)"
+    if field_type == "email" and not _EMAIL_RE.match(v):
+        return "כתובת אימייל לא תקינה"
+    if field_type == "url" and not _URL_RE.match(v):
+        return "כתובת אתר לא תקינה (דוגמה: example.co.il או https://example.co.il)"
+    return None
+
+
+def _form_back_url(brief_id: str, status: str) -> str:
+    """During draft phase, back goes to picker (participants).
+    Post-draft, back goes to dashboard (operators only)."""
+    if status == "draft":
+        return url_for("public.brief_picker", brief_id=brief_id)
+    return url_for("public.brief_dashboard", brief_id=brief_id)
+
+
 @bp.route("/b/<brief_id>/<dept>", methods=["GET", "POST"])
 def participant_form(brief_id, dept):
     brief = _get_brief(brief_id)
@@ -327,13 +381,18 @@ def participant_form(brief_id, dept):
     tpl = load_template(template_id)
     section = _get_section(brief_id, dept)
     existing_data = json.loads(section["data"]) if section and section["data"] else {}
+    back_url = _form_back_url(brief_id, brief["status"])
 
     if request.method == "POST":
         data = {}
+        field_errors: dict[str, str] = {}
         for field in dept_def["fields"]:
             fid = field["id"]
             val = request.form.get(fid, "").strip()
             data[fid] = val
+            err = _validate_field_format(field.get("type", "text"), val)
+            if err:
+                field_errors[fid] = err
 
         # Required field validation (server-side last line of defense)
         missing = [
@@ -349,6 +408,19 @@ def participant_form(brief_id, dept):
                 dept=dept,
                 dept_def=dept_def,
                 data=data,
+                back_url=back_url,
+                field_errors=field_errors,
+            )
+        if field_errors:
+            flash("יש שדות עם פורמט לא תקין — תקן והמשך.", "error")
+            return render_template(
+                "participant.html",
+                brief=brief,
+                dept=dept,
+                dept_def=dept_def,
+                data=data,
+                back_url=back_url,
+                field_errors=field_errors,
             )
 
         # For the "about" section, derive filled_by from the client contact fields.
@@ -366,7 +438,7 @@ def participant_form(brief_id, dept):
         )
         db.commit()
         flash("נשמר בהצלחה", "success")
-        return redirect(url_for("public.brief_picker", brief_id=brief_id))
+        return redirect(back_url)
 
     return render_template(
         "participant.html",
@@ -374,6 +446,8 @@ def participant_form(brief_id, dept):
         dept=dept,
         dept_def=dept_def,
         data=existing_data,
+        back_url=back_url,
+        field_errors={},
     )
 
 

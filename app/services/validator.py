@@ -143,7 +143,12 @@ _POLISH_SYSTEM = """אתה עורך תוכן שיווקי בעברית עבור 
 - שמור על המבנה: רשימות נשארות רשימות (שורה אחת לכל פריט), טקסטים חופשיים נשארים פסקאות
 - שדות שכבר תקינים — דלג עליהם, אל תכלול בתשובה
 
-החזר JSON בלבד עם שדות ששופרו:
+חשוב מאוד — מה לא לעשות:
+- אם השדה מכיל ג'יבריש (אותיות אקראיות, "asdf", "לחדעכדגע", הקלדות מבחן) — אל תנסה לליטוש. השאר אותו ריק בתשובה. סקירת המומחה תסמן את זה.
+- אם השדה מכיל מילה אחת או שתיים בלבד שאין מה לליטוש — דלג.
+- אל תהפוך תוכן דליל למשהו עשיר באופן מלאכותי.
+
+החזר JSON בלבד עם שדות ששופרו (השאר ריק שדות שאסור לליטוש):
 {
   "about": { "field_id": "טקסט מלוטש" },
   "seo":   { "field_id": "..." },
@@ -310,3 +315,128 @@ def manager_prompt(brief, db, prompt: str) -> dict | None:
     parsed = _parse_json_response(resp.content[0].text)
     _log_call(db, brief["id"], "manager_prompt", resp.usage)
     return parsed
+
+
+# ───────────────────────────────────────────────────────────────────
+# Layer 5 — Expert review (Claude call #3)
+# ───────────────────────────────────────────────────────────────────
+
+
+_EXPERT_REVIEW_SYSTEM = """אתה אסטרטג בכיר בסוכנות שיווק דיגיטלי ישראלית בעלת ניסיון של 15+ שנים.
+עברת על אלפי בריפי לקוח ב-SEO ו-PPC. אתה מבין מצוין:
+- איך נראה בריף בריא לעומת בריף שמכין את המנהל לקמפיין כושל
+- איזה שדות אופציונליים הופכים לקריטיים בהקשר מסוים (B2B vs B2C, תקציב גבוה vs נמוך, שירות לוקאלי vs ארצי)
+- מתי משתתף מילא ג'יבריש או טקסט-בדיקה (תוצאה: צריך למלא מחדש)
+- מתי יש סתירה אסטרטגית בין הצהרות (יעד CPA נמוך + קהל פרימיום, או "ארצי" + "תקציב 1500₪")
+
+המשימה: לקבל את כל הבריף (כולל שדות אופציונליים שלא מולאו) ולהציף בעיות אמיתיות.
+
+זהה במיוחד את אלה — בסדר חשיבות:
+
+1. **תוכן בלתי שמיש (severity: critical):**
+   - ג'יבריש או אותיות אקראיות (לחדעכדגע, asdf, qwerty, 12345)
+   - הקלדות בדיקה (test, בדיקה, אאא, שגגג)
+   - מילה אחת בודדת בשדה textarea שמבקש פסקה (למשל "אנשים" כקהל יעד)
+   - תאריכים/מספרים לא הגיוניים
+
+2. **שדות אופציונליים שדילגו עליהם והם קריטיים בהקשר (severity: critical/warning):**
+   - prior_seo='yes' אבל prior_seo_notes ריק → critical (חייבים להבין מה היה)
+   - platforms כולל פלטפורמה אמיתית אבל existing_campaigns ריק → warning
+   - budget גבוה (>5,000₪) ו-availability ריק → suggestion
+   - competitors ריק לעסק שאינו בנישה ייחודית → warning
+   - current_url ריק וגם current_url_notes ריק → critical (הסוכנות צריכה לדעת אם יש אתר)
+
+3. **תוכן דליל (severity: warning):**
+   - שדה textarea/list עם 1-3 מילים בלבד שלא מוסיפות ערך אמיתי
+   - תיאור גנרי מאוד שלא מבדל את הלקוח
+
+4. **סתירות אסטרטגיות (severity: critical/warning):**
+   - יעדים מנוגדים, קהל יעד שלא מתאים לתקציב/פלטפורמה
+   - אזור גאוגרפי שלא תואם את התקציב
+
+5. **חוסר ספציפיות (severity: warning):**
+   - "אנשים", "כולם", "מי שצריך", "המון" כקהל יעד
+   - תקציב ללא מטבע
+
+החזר JSON בלבד:
+{
+  "findings": [
+    {
+      "severity": "critical" | "warning" | "suggestion",
+      "title": "כותרת קצרה (3-6 מילים)",
+      "field_ref": "{dept}.{field_id}" או null אם זה כללי,
+      "issue": "מה הבעיה — משפט אחד תכליתי",
+      "suggestion": "מה כדאי לעשות — משפט אחד מעשי"
+    }
+  ]
+}
+
+אם הבריף מצוין ואין מה להעיר — החזר {"findings": []}.
+חשוב: דבר אל הקוראת/הקורא ישירות בעברית, בטון מקצועי-חברי. בלי משפטים מליציים.
+"""
+
+
+def expert_review(brief, db) -> list[dict]:
+    """Senior agency strategist scrutinizes the entire brief — including
+    empty optional fields — and surfaces issues. Returns a list of finding dicts.
+    Empty list if AI off or no issues."""
+    if not current_app.config.get("AI_AVAILABLE"):
+        return []
+
+    template_id = brief["template_id"]
+    tpl = load_template(template_id)
+    departments = json.loads(brief["departments"])
+
+    # Build a representation that includes EMPTY optional fields with their hints,
+    # so the model can decide if they should have been filled given the context.
+    brief_repr: dict = {}
+    for dept in departments:
+        dept_def = tpl["departments"].get(dept)
+        if not dept_def:
+            continue
+        sec_row = db.execute(
+            "SELECT data FROM sections WHERE brief_id = ? AND dept = ?",
+            (brief["id"], dept),
+        ).fetchone()
+        sec_data = json.loads(sec_row["data"]) if sec_row and sec_row["data"] else {}
+
+        fields_repr = []
+        for f in dept_def["fields"]:
+            value = sec_data.get(f["id"], "")
+            fields_repr.append({
+                "id": f["id"],
+                "label": f["label_he"],
+                "type": f["type"],
+                "required": f.get("required", False),
+                "hint": f.get("hint", ""),
+                "value": value if value else None,
+            })
+        brief_repr[dept] = {
+            "label": dept_def["label_he"],
+            "fields": fields_repr,
+        }
+
+    user_msg = (
+        f"לקוח: {brief['client_name']}\n\n"
+        f"הבריף המלא (כולל שדות אופציונליים שלא מולאו — value=null):\n\n"
+        f"{json.dumps(brief_repr, ensure_ascii=False, indent=2)}"
+    )
+
+    client = _client()
+    resp = client.messages.create(
+        model=_MODEL,
+        max_tokens=3072,
+        system=[{
+            "type": "text",
+            "text": _EXPERT_REVIEW_SYSTEM,
+            "cache_control": {"type": "ephemeral"},
+        }],
+        messages=[{"role": "user", "content": user_msg}],
+    )
+
+    raw = resp.content[0].text
+    parsed = _parse_json_response(raw)
+    findings = parsed.get("findings", []) if isinstance(parsed, dict) else []
+
+    _log_call(db, brief["id"], "expert_review", resp.usage)
+    return findings

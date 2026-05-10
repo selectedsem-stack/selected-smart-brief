@@ -58,6 +58,8 @@ _MIGRATIONS = [
     ("briefs",   "ai_status",              "ALTER TABLE briefs ADD COLUMN ai_status TEXT DEFAULT 'pending'"),
     # Manager flow (Sprint 3)
     ("briefs",   "manager_email_sent_at",  "ALTER TABLE briefs ADD COLUMN manager_email_sent_at TEXT"),
+    # Expert review (Sprint 6)
+    ("briefs",   "expert_findings",        "ALTER TABLE briefs ADD COLUMN expert_findings TEXT"),
 ]
 
 

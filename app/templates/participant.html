@@ -12,7 +12,8 @@
 <form method="post" class="card" novalidate>
 
   {% for f in dept_def.fields %}
-    <div class="field {% if f.type == 'list' %}field-list{% endif %}">
+    {% set err = field_errors.get(f.id) if field_errors else None %}
+    <div class="field {% if f.type == 'list' %}field-list{% endif %} {% if err %}field-error{% endif %}">
       <label for="{{ f.id }}">
         {% if f.required %}<span class="req">*</span>{% endif %}{{ f.label_he }}
       </label>
@@ -21,6 +22,9 @@
       {% if f.type in ('text','tel','email','url') %}
         <input type="{{ f.type }}" id="{{ f.id }}" name="{{ f.id }}"
                value="{{ data.get(f.id, '') }}"
+               {% if f.type == 'tel' %}inputmode="tel" placeholder="050-1234567"{% endif %}
+               {% if f.type == 'email' %}inputmode="email" placeholder="name@example.com"{% endif %}
+               {% if f.type == 'url' %}inputmode="url" placeholder="https://example.co.il"{% endif %}
                {% if f.required %}required{% endif %}>
       {% elif f.type == 'textarea' %}
         <textarea id="{{ f.id }}" name="{{ f.id }}" rows="3"
@@ -37,12 +41,13 @@
           {% endfor %}
         </select>
       {% endif %}
+      {% if err %}<div class="field-error-msg">{{ err }}</div>{% endif %}
     </div>
   {% endfor %}
 
   <div class="form-actions">
     <button type="submit" class="btn btn-lg">שמור סקשן</button>
-    <a href="{{ url_for('public.brief_picker', brief_id=brief.id) }}" class="btn btn-outline">חזור</a>
+    <a href="{{ back_url }}" class="btn btn-outline">חזור</a>
   </div>
 </form>
 {% endblock %}

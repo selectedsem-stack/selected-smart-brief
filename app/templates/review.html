@@ -4,9 +4,11 @@
 {% block header_meta %}{{ brief.client_name }}{% endblock %}
 
 {% set SEVERITY_STYLES = {
-  'error':   {'bg': '#fde7e7', 'border': '#d23f3f', 'icon': '⚠'},
-  'warning': {'bg': '#fff4e0', 'border': '#d68a26', 'icon': '!'},
-  'info':    {'bg': '#e8eef7', 'border': '#5b7aa8', 'icon': 'i'},
+  'error':      {'bg': '#fde7e7', 'border': '#d23f3f', 'icon': '⚠', 'label': 'שגיאה'},
+  'critical':   {'bg': '#fde7e7', 'border': '#d23f3f', 'icon': '⚠', 'label': 'קריטי'},
+  'warning':    {'bg': '#fff4e0', 'border': '#d68a26', 'icon': '!', 'label': 'אזהרה'},
+  'suggestion': {'bg': '#e8eef7', 'border': '#5b7aa8', 'icon': '✦', 'label': 'הצעה'},
+  'info':       {'bg': '#e8eef7', 'border': '#5b7aa8', 'icon': 'i', 'label': 'לידיעה'},
 } %}
 
 {% block content %}
@@ -16,9 +18,63 @@
     <h1 style="font-size:26px;font-weight:900;letter-spacing:-0.02em;">סקירת AI</h1>
   </div>
   <div style="color:var(--text-soft);font-size:14px;">
-    Claude סיים ליטוש ובדיקת עקביות. עבור על ההצעות, ואשר.
+    Claude סיים ליטוש, בדיקת עקביות, וסקירה מקצועית. עבור על הממצאים ואשר.
   </div>
 </div>
+
+{# ── Expert findings (senior strategist review) ── #}
+{% if findings %}
+{% set crit_count = findings|selectattr('severity','equalto','critical')|list|length %}
+{% set warn_count = findings|selectattr('severity','equalto','warning')|list|length %}
+{% set sugg_count = findings|selectattr('severity','equalto','suggestion')|list|length %}
+
+<div style="background:linear-gradient(135deg,#1a1a1a 0%,#2c1f15 100%);color:#fff;border-radius:14px;padding:20px 22px;margin-bottom:18px;box-shadow:0 6px 20px rgba(0,0,0,0.12);">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+    <span style="font-size:22px;">🎯</span>
+    <h2 style="font-size:19px;font-weight:800;letter-spacing:-0.01em;color:#fff;margin:0;">חוות דעת מקצועית — אסטרטג בכיר</h2>
+  </div>
+  <div style="font-size:13.5px;color:#d8d6cf;line-height:1.55;">
+    סקירה של מומחה SEO/PPC עם ניסיון של 15+ שנים על הבריף.
+    {% if crit_count %}<span style="color:#ff8a8a;font-weight:700;">{{ crit_count }} קריטי</span>{% endif %}
+    {% if crit_count and (warn_count or sugg_count) %} · {% endif %}
+    {% if warn_count %}<span style="color:#ffc266;font-weight:700;">{{ warn_count }} אזהרה</span>{% endif %}
+    {% if warn_count and sugg_count %} · {% endif %}
+    {% if sugg_count %}<span style="color:#a3c2ee;font-weight:700;">{{ sugg_count }} הצעה</span>{% endif %}
+  </div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+  {% for f in findings %}
+    {% set s = SEVERITY_STYLES.get(f.severity, SEVERITY_STYLES['info']) %}
+    <div style="background:{{ s.bg }};border-right:4px solid {{ s.border }};border-radius:10px;padding:14px 16px;">
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div style="width:28px;height:28px;border-radius:50%;background:{{ s.border }};color:#fff;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          {{ s.icon }}
+        </div>
+        <div style="flex:1;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:10px;font-weight:800;color:#fff;background:{{ s.border }};padding:2px 7px;border-radius:4px;letter-spacing:0.05em;">{{ s.label }}</span>
+            <div style="font-size:15px;font-weight:700;color:{{ s.border }};">{{ f.title }}</div>
+          </div>
+          <div style="font-size:14px;color:var(--text);line-height:1.55;margin-bottom:4px;">
+            {{ f.issue }}
+          </div>
+          {% if f.suggestion %}
+            <div style="font-size:13.5px;color:var(--text-mid);line-height:1.5;background:rgba(255,255,255,0.5);padding:7px 10px;border-radius:6px;margin-top:6px;">
+              <span style="font-weight:700;color:{{ s.border }};">המלצה:</span> {{ f.suggestion }}
+            </div>
+          {% endif %}
+          {% if f.field_ref %}
+            <div style="font-size:11px;color:var(--text-soft);margin-top:7px;letter-spacing:0.04em;font-family:'Heebo',monospace;">
+              שדה: <span dir="ltr">{{ f.field_ref }}</span>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endif %}
 
 {# ── Consistency warnings ── #}
 {% if warnings %}
