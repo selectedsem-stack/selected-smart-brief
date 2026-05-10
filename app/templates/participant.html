@@ -13,7 +13,8 @@
 
   {% for f in dept_def.fields %}
     {% set err = field_errors.get(f.id) if field_errors else None %}
-    <div class="field {% if f.type == 'list' %}field-list{% endif %} {% if err %}field-error{% endif %}">
+    <div class="field {% if f.type == 'list' %}field-list{% endif %} {% if err %}field-error{% endif %}"
+         {% if f.show_when %}data-show-when-field="{{ f.show_when.field }}" data-show-when-value="{{ f.show_when.value }}"{% endif %}>
       <label for="{{ f.id }}">
         {% if f.required %}<span class="req">*</span>{% endif %}{{ f.label_he }}
       </label>
@@ -50,4 +51,30 @@
     <a href="{{ back_url }}" class="btn btn-outline">חזור</a>
   </div>
 </form>
+
+<script>
+(function() {
+  // Conditional fields: hide unless their referenced field has the matching value.
+  const conditionals = document.querySelectorAll('.field[data-show-when-field]');
+  if (!conditionals.length) return;
+
+  function refresh() {
+    conditionals.forEach(el => {
+      const targetId = el.dataset.showWhenField;
+      const expectedVal = el.dataset.showWhenValue;
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      el.style.display = (target.value === expectedVal) ? '' : 'none';
+    });
+  }
+
+  // Wire change listeners for each unique target field
+  const targetIds = new Set([...conditionals].map(el => el.dataset.showWhenField));
+  targetIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', refresh);
+  });
+  refresh();
+})();
+</script>
 {% endblock %}

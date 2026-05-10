@@ -10,6 +10,16 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from .templates_loader import load_template
 
 
+PROJECT_TYPE_LABELS = {
+    "landing":   "דף נחיתה",
+    "corporate": "אתר תדמית",
+    "store":     "חנות אונליין",
+    "portal":    "פורטל / מערכת",
+    "catalog":   "קטלוג",
+    "other":     "אחר",
+}
+
+
 PRIOR_SEO_LABELS = {
     "no": "לא",
     "yes": "כן",
@@ -83,11 +93,20 @@ def _build_data_dict(brief, db) -> dict:
     about = _section_data(db, brief["id"], "about")
     seo = _section_data(db, brief["id"], "seo") if "seo" in departments else {}
     ppc = _section_data(db, brief["id"], "ppc") if "ppc" in departments else {}
+    web = _section_data(db, brief["id"], "website_design") if "website_design" in departments else {}
 
     # PPC platforms / audience derivation
     ppc_platforms = _split_lines(ppc.get("platforms", ""))
     google_summary, meta_summary = _classify_platforms(ppc_platforms)
     ppc_audience_lines = _split_lines(ppc.get("audience", ""))[:6]
+
+    # Website design — resolve project_type label, with 'אחר' falling through to free text
+    web_project_type_raw = web.get("project_type", "")
+    web_project_type_other = web.get("project_type_other", "").strip()
+    if web_project_type_raw == "other" and web_project_type_other:
+        web_project_type_label = web_project_type_other
+    else:
+        web_project_type_label = PROJECT_TYPE_LABELS.get(web_project_type_raw, "—")
 
     return {
         "client_name": client_name,
@@ -129,6 +148,17 @@ def _build_data_dict(brief, db) -> dict:
             "geographic_area": ppc.get("geographic_area", ""),
             "availability": ppc.get("availability", ""),
             "additional_notes": _split_lines(ppc.get("additional_notes", "")),
+        },
+        "website_design": {
+            "project_type": web_project_type_raw,
+            "project_type_label": web_project_type_label,
+            "branding_kit": web.get("branding_kit", ""),
+            "site_impression": web.get("site_impression", ""),
+            "liked_websites": _split_lines(web.get("liked_websites", "")),
+            "materials_ready": web.get("materials_ready", ""),
+            "navigation": web.get("navigation", ""),
+            "homepage_layout": web.get("homepage_layout", ""),
+            "additional_notes": web.get("additional_notes", ""),
         },
     }
 

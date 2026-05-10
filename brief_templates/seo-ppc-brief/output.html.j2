@@ -158,11 +158,18 @@
     }
 
     .page-footer {
-      border-top: 0.3mm solid var(--gray-line); padding: 4mm 10mm;
-      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+      border-top: 0.3mm solid var(--gray-line); padding: 3.5mm 10mm 3mm;
+      display: flex; flex-direction: column; gap: 1.5mm; flex-shrink: 0;
     }
-    .page-footer-logo img { height: 24px; width: auto; }
+    .page-footer-row {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+    }
+    .page-footer-logo img { height: 56px; width: auto; }
     .page-footer-tag { font-size: 8pt; color: var(--text-soft); letter-spacing: 0.06em; font-weight: 500; }
+    .page-footer-copyright {
+      font-size: 7.5pt; color: var(--text-soft); direction: ltr;
+      text-align: center; letter-spacing: 0.05em; opacity: 0.72; font-weight: 400;
+    }
 
     .section-label {
       font-size: 8.5pt; font-weight: 700; letter-spacing: 0.18em;
@@ -202,7 +209,13 @@
       content: '•'; position: absolute; right: 0; color: var(--orange); font-weight: 700;
     }
 
-    .intro-page { display: grid; grid-template-columns: 5fr 7fr; height: 210mm; }
+    .intro-page { display: grid; grid-template-columns: 5fr 7fr; height: 210mm; position: relative; }
+    .intro-page::after {
+      content: "© " attr(data-year) " Selected Digital Marketing. All rights reserved.";
+      position: absolute; bottom: 2.5mm; left: 0; right: 0;
+      text-align: center; font-size: 6.5pt; color: rgba(255,255,255,0.4);
+      direction: ltr; letter-spacing: 0.05em; pointer-events: none;
+    }
     .intro-brand {
       background: var(--orange-bg); display: flex; flex-direction: column;
       padding: 10mm; justify-content: space-between; position: relative; overflow: hidden;
@@ -294,6 +307,55 @@
       color: var(--orange); text-transform: uppercase;
     }
     .contact-value { font-size: 12pt; font-weight: 500; color: #fff; }
+
+    /* Closing / thank-you page */
+    .page.closing {
+      background: var(--dark); color: #fff; padding: 0;
+      display: flex; flex-direction: column; justify-content: space-between;
+      position: relative; overflow: hidden;
+    }
+    .closing-watermark {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      opacity: 0.05; pointer-events: none; z-index: 0;
+    }
+    .closing-watermark img { width: 150mm; height: 150mm; object-fit: contain; }
+    .closing-content {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      align-items: center; padding: 25mm 20mm 0; position: relative; z-index: 1;
+      text-align: center;
+    }
+    .closing-eyebrow {
+      font-size: 9pt; font-weight: 700; letter-spacing: 0.28em;
+      color: var(--orange); text-transform: uppercase; margin-bottom: 14mm;
+    }
+    .closing-title {
+      font-size: 110pt; font-weight: 900; line-height: 0.95; letter-spacing: -0.04em;
+      color: #fff; margin-bottom: 5mm;
+    }
+    .closing-sub {
+      font-size: 18pt; font-weight: 400; color: rgba(255,255,255,0.68);
+      margin-bottom: 16mm; line-height: 1.4;
+    }
+    .closing-meta {
+      display: flex; align-items: center; gap: 7mm;
+      font-size: 10pt; font-weight: 500; color: rgba(255,255,255,0.55);
+      letter-spacing: 0.08em;
+    }
+    .closing-meta-divider {
+      width: 1px; height: 7mm; background: rgba(255,255,255,0.18);
+    }
+    .closing-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 5mm 12mm 6mm; position: relative; z-index: 1;
+      border-top: 0.3mm solid rgba(255,255,255,0.1);
+    }
+    .closing-footer-logo img {
+      height: 56px; width: auto; filter: brightness(0) invert(1);
+    }
+    .closing-footer-copyright {
+      font-size: 7.5pt; color: rgba(255,255,255,0.5);
+      direction: ltr; letter-spacing: 0.05em;
+    }
   </style>
 </head>
 <body>
@@ -315,7 +377,10 @@
       <div class="cover-client">{% for line in data.client_lines %}{{ line }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>
       <div class="cover-sub">פגישת היכרות והכרת<br>הצרכים הדיגיטליים</div>
     </div>
-    <div style="font-size:8pt;color:rgba(255,255,255,0.5);">selected.co.il</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+      <div style="font-size:8pt;color:rgba(255,255,255,0.5);">selected.co.il</div>
+      <div style="font-size:7pt;color:rgba(255,255,255,0.45);direction:ltr;letter-spacing:0.05em;">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
+    </div>
   </div>
 </div>
 
@@ -400,14 +465,17 @@
     </div>
   </div>
   <div class="page-footer">
-    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-row">
+      <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
     <div class="page-footer-tag">סיכום פגישת בריף — {{ data.client_name }}</div>
+    </div>
+    <div class="page-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
   </div>
 </div>
 
 {% if 'seo' in data.departments %}
 {# ── PAGE 3: SEO INTRO ── #}
-<div class="page intro-page">
+<div class="page intro-page" data-year="{{ data.year }}">
   <div class="intro-brand">
     <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
     <div>
@@ -494,8 +562,11 @@
     </div>
   </div>
   <div class="page-footer">
-    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-row">
+      <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
     <div class="page-footer-tag">קידום אורגני (SEO) — {{ data.client_name }}</div>
+    </div>
+    <div class="page-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
   </div>
 </div>
 
@@ -522,15 +593,18 @@
     </div>
   </div>
   <div class="page-footer">
-    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-row">
+      <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
     <div class="page-footer-tag">קידום אורגני (SEO) — {{ data.client_name }}</div>
+    </div>
+    <div class="page-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
   </div>
 </div>
 {% endif %}
 
 {% if 'ppc' in data.departments %}
 {# ── PAGE 6: PPC INTRO ── #}
-<div class="page intro-page">
+<div class="page intro-page" data-year="{{ data.year }}">
   <div class="intro-brand">
     <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
     <div>
@@ -629,8 +703,11 @@
     {% endif %}
   </div>
   <div class="page-footer">
-    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-row">
+      <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
     <div class="page-footer-tag">קמפיין ממומן (PPC) — {{ data.client_name }}</div>
+    </div>
+    <div class="page-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
   </div>
 </div>
 
@@ -653,11 +730,190 @@
     </div>
   </div>
   <div class="page-footer">
-    <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-row">
+      <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
     <div class="page-footer-tag">קמפיין ממומן (PPC) — {{ data.client_name }}</div>
+    </div>
+    <div class="page-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
   </div>
 </div>
 {% endif %}
+
+{% if 'website_design' in data.departments %}
+{# ── PAGE: WEBSITE DESIGN INTRO ── #}
+<div class="page intro-page" data-year="{{ data.year }}">
+  <div class="intro-brand">
+    <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
+    <div>
+      <div class="intro-brand-title">עיצוב<br>אתרים</div>
+      <div class="intro-brand-sub">Web Design &amp; Build</div>
+    </div>
+    <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
+  </div>
+  <div class="intro-content" style="position:relative;overflow:hidden;">
+    <div style="position:absolute;left:-20mm;top:-15mm;opacity:0.06;pointer-events:none;">
+      <img src="{{ icon_src }}" style="width:80mm;height:80mm;object-fit:contain;">
+    </div>
+    <div style="position:relative;z-index:1;"><div class="intro-content-header">מה כולל פרויקט עיצוב האתר אצלנו</div></div>
+    <div class="intro-facts">
+      <div class="intro-fact"><div class="fact-label">עיצוב</div><div class="fact-value">אישי לעסק<br><span>ללא תבניות</span></div></div>
+      <div class="intro-fact"><div class="fact-label">טכנולוגיה</div><div class="fact-value">מערכת<br><span>מתקדמת</span></div></div>
+      <div class="intro-fact"><div class="fact-label">שפת מותג</div><div class="fact-value">התאמה<br><span>אישית</span></div></div>
+      <div class="intro-fact"><div class="fact-label">תוצאה</div><div class="fact-value">אתר<br><span>שממיר</span></div></div>
+    </div>
+    <div>
+      <div style="font-size:8.5pt;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:2.5mm;">העקרונות שלנו</div>
+      <div class="intro-services">
+        <div class="service-item"><div class="service-item-dot"></div>עיצוב אישי שלא דומה לאף אתר אחר</div>
+        <div class="service-item"><div class="service-item-dot"></div>מיקוד חסר פשרות בנראות</div>
+        <div class="service-item"><div class="service-item-dot"></div>התאמה לטרנדים החדשניים בעולם</div>
+        <div class="service-item"><div class="service-item-dot"></div>טכנולוגיה עכשווית — צוות פיתוח פנימי</div>
+        <div class="service-item"><div class="service-item-dot"></div>התאמה לשפת המותג של העסק</div>
+        <div class="service-item"><div class="service-item-dot"></div>תוצר מוגמר ללא פשרות</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ── PAGE: WEBSITE DESIGN FIELDS ── #}
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-title">עיצוב ובניית אתר — <span>פרטי הלקוח</span></div>
+    <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+  </div>
+  <div class="page-body">
+    <div class="card-grid">
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z"/></svg></div>
+        <div class="card-content">
+          <h4>סוג הפרויקט / האתר</h4>
+          <p><strong style="font-size:11pt;">{{ data.website_design.project_type_label }}</strong></p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M17.66 9L12 3.34 6.34 9C5 10.34 4 12.07 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8c0-1.93-1-3.66-2.34-5z"/></svg></div>
+        <div class="card-content">
+          <h4>ערכת מיתוג ולוגו</h4>
+          <p>{{ data.website_design.branding_kit }}</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></div>
+        <div class="card-content">
+          <h4>סגנון ורושם רצויים</h4>
+          <p>{{ data.website_design.site_impression }}</p>
+        </div>
+      </div>
+      {% if data.website_design.liked_websites %}
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></div>
+        <div class="card-content">
+          <h4>אתרים אהובים מהרשת</h4>
+          <ul>
+            {% for site in data.website_design.liked_websites %}<li dir="ltr" style="text-align:right;">{{ site }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+      {% endif %}
+      {% if data.website_design.materials_ready %}
+      <div class="info-card">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+        <div class="card-content">
+          <h4>חומרים שיוכנו לתחילת עבודה</h4>
+          <p>{{ data.website_design.materials_ready }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if data.website_design.navigation %}
+      <div class="info-card" style="grid-column: span 2;">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z"/></svg></div>
+        <div class="card-content">
+          <h4>מערכת ניווט של האתר</h4>
+          <p>{{ data.website_design.navigation }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if data.website_design.homepage_layout %}
+      <div class="info-card" style="grid-column: span 2;">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M3 5v14h18V5H3zm16 12H5V7h14v10zM7 9h10v2H7zm0 4h7v2H7z"/></svg></div>
+        <div class="card-content">
+          <h4>חלוקת דף הבית</h4>
+          <p>{{ data.website_design.homepage_layout }}</p>
+        </div>
+      </div>
+      {% endif %}
+      {% if data.website_design.additional_notes %}
+      <div class="info-card" style="grid-column: span 2;">
+        <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg></div>
+        <div class="card-content">
+          <h4>הערות והרחבות מיוחדות</h4>
+          <p>{{ data.website_design.additional_notes }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-row">
+      <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-tag">עיצוב ובניית אתר — {{ data.client_name }}</div>
+    </div>
+    <div class="page-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
+  </div>
+</div>
+
+{# ── PAGE: WEBSITE DESIGN PROCESS ── #}
+<div class="page">
+  <div class="page-header">
+    <div class="page-header-title">עיצוב ובניית אתר — <span>תהליך העבודה</span></div>
+    <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+  </div>
+  <div class="page-body">
+    <div class="section-label">10 שלבים מהפגישה ועד עליית האתר לאוויר</div>
+    <div class="steps-grid">
+      <div class="step-row"><div class="step-num">1</div><div class="step-text"><strong>פגישת בריף בשיתוף הלקוח</strong>הגדרת המטרות, סגנון העיצוב והחומרים הנדרשים לתחילת העבודה</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-text"><strong>סקיצה לדף הראשי</strong>הלקוח מקבל סקיצה ראשונה של דף הבית — מאשר או נותן הערות</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-text"><strong>תיקונים ושינויים</strong>מתבצעים תיקונים לפי הערות ונשלחים שוב לתגובה — עד אישור סופי</div></div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-text"><strong>אישור בכתב של הדף הראשי</strong>אישור הסקיצה הסופית ע"י הלקוח בכתב — תחילת פיתוח. דפים פנימיים יעוצבו לפי תבנית הראשי והצבעוניות</div></div>
+      <div class="step-row"><div class="step-num">5</div><div class="step-text"><strong>פיתוח האתר</strong>בניית האתר על בסיס הסקיצה המאושרת — בהתאם לזמני ההסכם</div></div>
+      <div class="step-row"><div class="step-num">6</div><div class="step-text"><strong>הבטחת איכות (QA)</strong>בדיקות תפקוד מלאות בצד החברה לפני המסירה ללקוח</div></div>
+      <div class="step-row"><div class="step-num">7</div><div class="step-text"><strong>הדרכה על מערכת הניהול</strong>הדרכה ללקוח כיצד להזין תכנים — טקסטים, מוצרים, תמונות. בזמן ההדרכה האתר על כתובתו הזמנית</div></div>
+      <div class="step-row"><div class="step-num">8</div><div class="step-text"><strong>הזנת תכנים על-ידי הלקוח</strong>הלקוח מזין תכנים לאתר — אלא אם הוזמן שירות הזנה מהחברה</div></div>
+      <div class="step-row"><div class="step-num">9</div><div class="step-text"><strong>אישור עלייה לאוויר</strong>הלקוח מאשר בכתב שניתן להעלות את האתר לכתובת הקבועה</div></div>
+      <div class="step-row"><div class="step-num">10</div><div class="step-text"><strong>העלאה לכתובת הקבועה</strong>האתר עובר מהכתובת הזמנית לכתובת הקבועה ועולה לאוויר</div></div>
+    </div>
+    <div style="margin-top:6mm;background:#fff4e0;border-right:3pt solid #d68a26;border-radius:3mm;padding:4mm 5mm;font-size:9.5pt;line-height:1.55;color:#5a3a08;">
+      <strong style="color:#a35e10;">חשוב לזכור:</strong> לאחר אישור סופי ותחילת הפיתוח, שינויי עיצוב נוספים יחויבו בעלות נוספת. במידה ובמהלך עבודות העיצוב נרכוש עבור הלקוח תמונות סטוק/אוויר — בעמוד אישור העיצוב הלקוח מאשר גם את רכישת התמונות.
+    </div>
+  </div>
+  <div class="page-footer">
+    <div class="page-footer-row">
+      <div class="page-footer-logo"><img src="{{ full_src }}" alt="Selected"></div>
+    <div class="page-footer-tag">עיצוב ובניית אתר — {{ data.client_name }}</div>
+    </div>
+    <div class="page-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
+  </div>
+</div>
+{% endif %}
+
+{# ── PAGE: CLOSING / THANK-YOU (always last) ── #}
+<div class="page closing">
+  <div class="closing-watermark"><img src="{{ icon_src }}" alt=""></div>
+  <div class="closing-content">
+    <div class="closing-eyebrow">Selected · Digital Marketing Agency</div>
+    <div class="closing-title">תודה.</div>
+    <div class="closing-sub">שיתוף הפעולה מתחיל עכשיו —<br>{{ data.client_name }} × Selected</div>
+    <div class="closing-meta">
+      <div>{{ data.year }}</div>
+      <div class="closing-meta-divider"></div>
+      <div dir="ltr">selected.co.il</div>
+    </div>
+  </div>
+  <div class="closing-footer">
+    <div class="closing-footer-logo"><img src="{{ logo_src }}" alt="Selected"></div>
+    <div class="closing-footer-copyright">© {{ data.year }} Selected Digital Marketing. All rights reserved.</div>
+  </div>
+</div>
 
 {% if show_print_button %}
 <div class="print-bar no-print">

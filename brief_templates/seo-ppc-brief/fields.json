@@ -1,6 +1,6 @@
 {
   "id": "seo-ppc-brief",
-  "label_he": "בריף SEO + PPC",
+  "label_he": "בריף Selected",
   "departments": {
     "about": {
       "label_he": "על הלקוח",
@@ -47,6 +47,21 @@
         {"id": "availability",          "label_he": "זמינות הקמפיין",        "type": "textarea", "required": false, "hint": "ימי השבוע, שעות פעילות, מגבלות משלוח"},
         {"id": "additional_notes",      "label_he": "הערות נוספות ופעולות נדרשות", "type": "list", "required": false, "hint": "פעולה בכל שורה"},
         {"id": "free_notes",            "label_he": "הערות חופשיות (PPC)",   "type": "textarea", "required": false, "hint": "כל מה שלא נכנס לשדות אחרים"}
+      ]
+    },
+    "website_design": {
+      "label_he": "עיצוב ובניית אתר",
+      "icon": "design",
+      "fields": [
+        {"id": "project_type",       "label_he": "סוג הפרויקט / האתר",        "type": "select",   "required": true,  "options": [{"value":"landing","label_he":"דף נחיתה"},{"value":"corporate","label_he":"אתר תדמית"},{"value":"store","label_he":"חנות אונליין"},{"value":"portal","label_he":"פורטל / מערכת"},{"value":"catalog","label_he":"קטלוג"},{"value":"other","label_he":"אחר"}]},
+        {"id": "project_type_other", "label_he": "פירוט סוג הפרויקט",         "type": "text",     "required": false, "hint": "מלא רק אם בחרת 'אחר' למעלה", "show_when": {"field": "project_type", "value": "other"}},
+        {"id": "branding_kit",       "label_he": "ערכת מיתוג ולוגו",           "type": "textarea", "required": true,  "hint": "האם קיים לוגו? צבעוניות מועדפת? פונטים?"},
+        {"id": "site_impression",    "label_he": "סגנון ורושם רצויים",         "type": "textarea", "required": true,  "hint": "מה האתר אמור לשדר? סגנון עיצוב — מודרני / מינימלי / חם / חגיגי"},
+        {"id": "liked_websites",     "label_he": "אתרים אהובים מהרשת",         "type": "list",     "required": false, "hint": "URL בכל שורה — של מתחרים או דוגמאות שהלקוח אוהב"},
+        {"id": "materials_ready",    "label_he": "חומרים שיוכנו לתחילת עבודה",  "type": "textarea", "required": false, "hint": "תמונות, טקסטים, וידאו, דמואים, לוגו וקטור"},
+        {"id": "navigation",         "label_he": "מערכת ניווט של האתר",        "type": "textarea", "required": false, "hint": "תפריט עיקרי + כותרות (sitemap)"},
+        {"id": "homepage_layout",    "label_he": "חלוקת דף הבית",             "type": "textarea", "required": false, "hint": "אילו סקציות יופיעו בדף הבית"},
+        {"id": "additional_notes",   "label_he": "הערות והרחבות מיוחדות",      "type": "textarea", "required": false, "hint": "מערכות חיצוניות, תוספות, אינטגרציות"}
       ]
     }
   },
