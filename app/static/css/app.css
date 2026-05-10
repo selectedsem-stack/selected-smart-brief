@@ -365,6 +365,53 @@ a:hover { text-decoration: underline; }
 }
 .participant-header h1 span { color: var(--orange); }
 
+/* Auto-save indicator (in participant header) */
+.autosave-indicator {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-top: 10px; padding: 5px 12px;
+  background: rgba(255,255,255,0.08); border-radius: 999px;
+  font-size: 12.5px; color: rgba(255,255,255,0.78); font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+}
+.autosave-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,0.45);
+  transition: background 0.2s;
+}
+.autosave-indicator[data-state="saving"] .autosave-dot {
+  background: var(--orange); animation: pulse 1.2s ease-in-out infinite;
+}
+.autosave-indicator[data-state="saved"] {
+  background: rgba(47,138,58,0.18); color: #b9e4c0;
+}
+.autosave-indicator[data-state="saved"] .autosave-dot { background: var(--success); animation: none; }
+.autosave-indicator[data-state="error"] {
+  background: rgba(210,63,63,0.22); color: #ffc7c7;
+}
+.autosave-indicator[data-state="error"] .autosave-dot { background: var(--error); animation: pulse 1.2s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+}
+
+/* Restore banner (shown when localStorage had unsaved values) */
+.restore-banner {
+  display: flex; align-items: center; gap: 12px;
+  background: #fff4e0; border: 1.5px solid #f4c87b;
+  border-right: 4px solid var(--orange);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
+  font-size: 14px; color: #5a3a08;
+}
+.restore-icon { font-size: 20px; flex-shrink: 0; }
+.restore-text { flex: 1; line-height: 1.5; }
+.restore-text strong { color: #a35e10; font-weight: 700; margin-left: 6px; }
+.restore-dismiss {
+  background: transparent; border: 1px solid #c98856; color: #a35e10;
+  padding: 6px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; flex-shrink: 0;
+}
+.restore-dismiss:hover { background: #f9e3c2; }
+
 .section-divider {
   height: 1px;
   background: var(--gray-line);

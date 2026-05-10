@@ -16,6 +16,7 @@
   </span>
 </div>
 
+{% if claude_enabled %}
 {# ── STICKY Claude Prompt bar ── #}
 <div class="manager-prompt-bar">
   <label>💬 בקשה ל-Claude</label>
@@ -26,6 +27,7 @@
   </div>
   <div id="claude-status" class="manager-prompt-status"></div>
 </div>
+{% endif %}
 
 {# ── Sections with editable fields ── #}
 {% for sec in sections_data %}
@@ -104,10 +106,11 @@
   document.querySelectorAll('.manager-field input, .manager-field textarea, .manager-field select')
     .forEach(attachAutoSave);
 
-  // ── Claude Prompt ──
+  // ── Claude Prompt (only wired when CLAUDE_ENABLED renders the bar) ──
   const promptInput = document.getElementById('claude-prompt');
   const promptStatus = document.getElementById('claude-status');
   const promptBtn = document.getElementById('claude-send');
+  if (!promptInput || !promptBtn) return;
 
   async function sendPrompt() {
     const text = promptInput.value.trim();

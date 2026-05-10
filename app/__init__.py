@@ -20,4 +20,8 @@ def create_app() -> Flask:
     app.register_blueprint(public_bp)
     app.register_blueprint(manager_bp)
 
+    @app.context_processor
+    def inject_globals():
+        return {"claude_enabled": app.config.get("CLAUDE_ENABLED", False)}
+
     return app

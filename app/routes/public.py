@@ -188,12 +188,12 @@ def brief_preview(brief_id):
 
 @bp.route("/b/<brief_id>/submit", methods=["POST"])
 def submit_for_approval(brief_id):
-    """Run the 3 AI layers (validate → polish → consistency) and route the
-    user to /review. Falls back to plain status='submitted' if no API key."""
+    """Save and mark the brief as submitted. No Claude calls in the live path —
+    sync AI was timing out gunicorn (60s) during live meetings. Re-enable later
+    via CLAUDE_ENABLED + an async worker."""
     brief = _get_brief(brief_id)
     db = get_db()
 
-    # Layer 1: required-field validation (no AI)
     missing = validator.validate_required(brief, db)
     if missing:
         labels = " · ".join(m["label_he"] for m in missing[:5])
@@ -201,44 +201,55 @@ def submit_for_approval(brief_id):
         flash(f"חסרים שדות חובה: {labels}{more}", "error")
         return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
 
-    # No API key → fall back to old behavior
-    if not current_app.config.get("AI_AVAILABLE"):
-        db.execute(
-            "UPDATE briefs SET status = 'submitted', submitted_at = ? WHERE id = ?",
-            (_now_iso(), brief_id),
-        )
-        db.commit()
-        flash("הבריף נשלח. הערה: Claude API לא מחובר — לא בוצעו ליטוש או בדיקת עקביות.", "info")
-        return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
-
-    # Layers 2 + 3 + 5: polish + consistency + expert review
-    db.execute("UPDATE briefs SET ai_status = 'running' WHERE id = ?", (brief_id,))
+    db.execute(
+        "UPDATE briefs SET status = 'submitted', submitted_at = ? WHERE id = ?",
+        (_now_iso(), brief_id),
+    )
     db.commit()
-    try:
-        validator.polish_brief(brief, db)
-        warnings = validator.check_consistency(brief, db)
-        findings = validator.expert_review(brief, db)
-        db.execute(
-            """UPDATE briefs
-                  SET status = 'reviewed',
-                      submitted_at = ?,
-                      ai_status = 'ready',
-                      consistency_warnings = ?,
-                      expert_findings = ?
-                WHERE id = ?""",
-            (_now_iso(),
-             json.dumps(warnings, ensure_ascii=False),
-             json.dumps(findings, ensure_ascii=False),
-             brief_id),
-        )
-        db.commit()
-        return redirect(url_for("public.brief_review", brief_id=brief_id))
-    except Exception as e:
-        current_app.logger.exception("AI processing failed")
-        db.execute("UPDATE briefs SET ai_status = 'failed' WHERE id = ?", (brief_id,))
-        db.commit()
-        flash(f"שגיאה בעיבוד AI: {e}. נסה שוב או פנה לתמיכה.", "error")
-        return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
+
+    if current_app.config.get("CLAUDE_ENABLED") and current_app.config.get("AI_AVAILABLE"):
+        # Future hook: run polish + consistency + expert_review here only when
+        # an async worker exists. Direct synchronous calls block gunicorn for
+        # 15-30s and have caused production crashes — do NOT re-enable inline.
+        current_app.logger.info("CLAUDE_ENABLED is true but inline AI is disabled until async path lands")
+
+    flash("הבריף נשלח. שתף את הקישור למנהל מהדאשבורד.", "success")
+    return redirect(url_for("public.brief_dashboard", brief_id=brief_id))
+
+
+@bp.route("/b/<brief_id>/<dept>/autosave", methods=["POST"])
+def autosave_section(brief_id, dept):
+    """Partial save during typing. No required-field validation, no format
+    validation, no status change. Merges submitted fields into sections.data.
+    Accepts JSON body or sendBeacon form-encoded payload."""
+    brief = _get_brief(brief_id)
+    if dept not in json.loads(brief["departments"]):
+        abort(404)
+
+    payload = request.get_json(silent=True)
+    if payload is None:
+        # sendBeacon may arrive as form-encoded or text/plain blob — try raw body
+        raw = request.get_data(as_text=True)
+        try:
+            payload = json.loads(raw) if raw else {}
+        except (ValueError, TypeError):
+            payload = {}
+    if not isinstance(payload, dict):
+        return jsonify({"ok": False, "error": "bad_payload"}), 400
+
+    db = get_db()
+    sec = _get_section(brief_id, dept)
+    existing = json.loads(sec["data"]) if sec and sec["data"] else {}
+
+    cleaned = {k: str(v).strip() for k, v in payload.items() if v is not None}
+    merged = {**existing, **cleaned}
+
+    db.execute(
+        "UPDATE sections SET data = ?, filled_at = ? WHERE brief_id = ? AND dept = ?",
+        (json.dumps(merged, ensure_ascii=False), _now_iso(), brief_id, dept),
+    )
+    db.commit()
+    return jsonify({"ok": True, "saved_at": _now_iso()})
 
 
 @bp.route("/b/<brief_id>/review")

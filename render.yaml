@@ -31,3 +31,5 @@ services:
         sync: false             # the manager who receives approval-link emails
       - key: DEFAULT_TEMPLATE
         value: seo-ppc-brief
+      - key: CLAUDE_ENABLED
+        value: "false"          # kill-switch — inline Claude was timing out (60s gunicorn); flip on only after async/queue lands

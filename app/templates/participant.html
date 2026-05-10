@@ -7,6 +7,18 @@
 <div class="participant-header">
   <div class="eyebrow">{{ brief.client_name }}</div>
   <h1>{{ dept_def.label_he }} <span>·</span> פרטי הסקשן</h1>
+  <div class="autosave-indicator" id="autosave-indicator" data-state="idle">
+    <span class="autosave-dot"></span><span class="autosave-text">שמירה אוטומטית פעילה</span>
+  </div>
+</div>
+
+<div id="restore-banner" class="restore-banner" hidden>
+  <span class="restore-icon">🔔</span>
+  <div class="restore-text">
+    <strong>שחזרנו טיוטה לא שמורה.</strong>
+    <span id="restore-count"></span> שדות שחזרו מהמכשיר שלך — בדוק שהכל מתאים והמשך.
+  </div>
+  <button type="button" class="restore-dismiss" id="restore-dismiss">התעלם</button>
 </div>
 
 <form method="post" class="card" novalidate>
@@ -54,27 +66,124 @@
 
 <script>
 (function() {
-  // Conditional fields: hide unless their referenced field has the matching value.
+  // ── Conditional fields: hide unless their referenced field matches.
   const conditionals = document.querySelectorAll('.field[data-show-when-field]');
-  if (!conditionals.length) return;
-
-  function refresh() {
-    conditionals.forEach(el => {
-      const targetId = el.dataset.showWhenField;
-      const expectedVal = el.dataset.showWhenValue;
-      const target = document.getElementById(targetId);
-      if (!target) return;
-      el.style.display = (target.value === expectedVal) ? '' : 'none';
+  if (conditionals.length) {
+    function refresh() {
+      conditionals.forEach(el => {
+        const target = document.getElementById(el.dataset.showWhenField);
+        if (!target) return;
+        el.style.display = (target.value === el.dataset.showWhenValue) ? '' : 'none';
+      });
+    }
+    new Set([...conditionals].map(el => el.dataset.showWhenField)).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', refresh);
     });
+    refresh();
   }
 
-  // Wire change listeners for each unique target field
-  const targetIds = new Set([...conditionals].map(el => el.dataset.showWhenField));
-  targetIds.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', refresh);
+  // ── Auto-save with localStorage shadow + retry.
+  const AUTOSAVE_URL = {{ url_for('public.autosave_section', brief_id=brief.id, dept=dept) | tojson }};
+  const STORAGE_KEY  = "smart-brief-{{ brief.id }}-{{ dept }}";
+  const indicator    = document.getElementById('autosave-indicator');
+  const indicatorTxt = indicator.querySelector('.autosave-text');
+
+  let saveTimer = null;
+  let retryTimer = null;
+  let lastPayload = "";
+
+  const fields = document.querySelectorAll('.field input, .field textarea, .field select');
+
+  function collectValues() {
+    const out = {};
+    fields.forEach(el => { if (el.name) out[el.name] = el.value; });
+    return out;
+  }
+
+  function setState(state, msg) {
+    indicator.dataset.state = state;
+    indicatorTxt.textContent = msg;
+  }
+
+  async function doSave() {
+    const data = collectValues();
+    const json = JSON.stringify(data);
+    if (json === lastPayload) return;
+    setState('saving', 'שומר…');
+    // Backup to localStorage BEFORE network — survives crashes.
+    try { localStorage.setItem(STORAGE_KEY, json); } catch {}
+    try {
+      const r = await fetch(AUTOSAVE_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: json,
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      lastPayload = json;
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      setState('saved', '✓ נשמר אוטומטית');
+      if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; }
+    } catch (err) {
+      setState('error', '⚠ לא נשמר — ננסה שוב');
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = setTimeout(doSave, 5000);
+    }
+  }
+
+  function scheduleSave() {
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 1500);
+  }
+
+  fields.forEach(el => {
+    el.addEventListener('input', scheduleSave);
+    el.addEventListener('change', scheduleSave);
+    el.addEventListener('blur', () => {
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      doSave();
+    });
   });
-  refresh();
+
+  // Tab close — fire-and-forget save via sendBeacon (works even mid-unload).
+  window.addEventListener('beforeunload', () => {
+    const data = collectValues();
+    const json = JSON.stringify(data);
+    if (json === lastPayload) return;
+    try { localStorage.setItem(STORAGE_KEY, json); } catch {}
+    try {
+      const blob = new Blob([json], {type: 'application/json'});
+      navigator.sendBeacon(AUTOSAVE_URL, blob);
+    } catch {}
+  });
+
+  // Restore from localStorage on load — only fills empty fields, never overwrites
+  // anything the server already returned.
+  window.addEventListener('DOMContentLoaded', () => {
+    let restored = 0;
+    try {
+      const cached = localStorage.getItem(STORAGE_KEY);
+      if (!cached) return;
+      const data = JSON.parse(cached);
+      Object.entries(data).forEach(([fieldId, value]) => {
+        if (!value) return;
+        const el = document.getElementsByName(fieldId)[0];
+        if (el && !el.value) { el.value = value; restored++; }
+      });
+    } catch {}
+    if (restored > 0) {
+      const banner = document.getElementById('restore-banner');
+      document.getElementById('restore-count').textContent = restored;
+      banner.hidden = false;
+      // Save the restored values to the server so we converge on truth.
+      scheduleSave();
+    }
+  });
+
+  document.getElementById('restore-dismiss').addEventListener('click', () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    document.getElementById('restore-banner').hidden = true;
+  });
 })();
 </script>
 {% endblock %}

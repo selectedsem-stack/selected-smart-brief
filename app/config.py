@@ -13,6 +13,10 @@ def load_config() -> dict:
         "DB_PATH": os.getenv("DB_PATH", "data/briefs.db"),
         "MANAGER_EMAIL": os.getenv("MANAGER_EMAIL", ""),
         "AI_AVAILABLE": bool(os.getenv("ANTHROPIC_API_KEY")),
+        # Master kill-switch for Claude in the live submit path. Default off
+        # since synchronous Claude calls were timing out gunicorn (60s) during
+        # live meetings. Flip to "true" only after introducing async/queue.
+        "CLAUDE_ENABLED": os.getenv("CLAUDE_ENABLED", "false").lower() == "true",
         "ACCESS_USER": os.getenv("ACCESS_USER", "selected"),
         "ACCESS_PASSWORD": os.getenv("ACCESS_PASSWORD", ""),
         "RESEND_API_KEY": os.getenv("RESEND_API_KEY", ""),
