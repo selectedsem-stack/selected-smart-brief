@@ -67,54 +67,37 @@
     .cover { display: grid; grid-template-columns: 1fr 1fr; height: 210mm; }
 
     .cover-dark {
+      /* clean dark entry panel — no photo, no watermark circle */
       position: relative; overflow: hidden;
-      background:
-        radial-gradient(ellipse 60% 50% at 30% 35%, rgba(232,114,42,0.10), transparent 70%),
-        radial-gradient(ellipse 50% 60% at 75% 75%, rgba(232,114,42,0.05), transparent 65%),
-        linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 50%, #050505 100%);
       display: flex; align-items: center; justify-content: center;
+      background:
+        radial-gradient(ellipse 65% 55% at 32% 38%, rgba(232,114,42,0.13), transparent 72%),
+        linear-gradient(140deg, #1d1d1d 0%, #111111 55%, #060606 100%);
     }
     .cover-dark::before {
-      /* subtle horizontal wave streaks for texture */
-      content: '';
-      position: absolute; inset: 0;
-      background-image: repeating-linear-gradient(
-        180deg,
-        transparent 0,
-        transparent 12mm,
-        rgba(255,255,255,0.018) 12mm,
-        rgba(255,255,255,0.018) 12.3mm
-      );
-      pointer-events: none;
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background-image: repeating-linear-gradient(180deg,
+        transparent 0, transparent 12mm,
+        rgba(255,255,255,0.02) 12mm, rgba(255,255,255,0.02) 12.3mm);
     }
     .cover-dark::after {
-      /* diagonal accent line in orange */
-      content: '';
-      position: absolute;
+      content: ''; position: absolute;
       bottom: 18mm; right: 14mm;
       width: 60mm; height: 0.6mm;
-      background: var(--orange);
-      opacity: 0.85;
-    }
-    .cover-watermark {
-      position: relative;
-      width: 78mm; height: 78mm;
-      object-fit: contain;
-      opacity: 0.06;
-      filter: brightness(0) invert(1);
+      background: var(--orange); opacity: 0.9;
     }
     .cover-eyebrow-dark {
       position: absolute;
       top: 14mm; left: 12mm;
       font-size: 8.5pt; font-weight: 700;
-      color: rgba(255,255,255,0.45);
+      color: rgba(255,255,255,0.5);
       letter-spacing: 0.25em; text-transform: uppercase;
     }
     .cover-decor-text {
       position: absolute;
       bottom: 14mm; left: 12mm;
       font-size: 7.5pt; font-weight: 500;
-      color: rgba(255,255,255,0.4);
+      color: rgba(255,255,255,0.42);
       letter-spacing: 0.18em; text-transform: uppercase;
       direction: ltr;
     }
@@ -187,7 +170,7 @@
     .info-card {
       background: var(--gray-bg); border-radius: 8px; padding: 6mm;
       display: flex; gap: 4mm; align-items: flex-start;
-      min-height: 0;  /* allow grid sizing */
+      min-height: 34mm;  /* K — field-card floor; 1fr grid still stretches to fill */
     }
     .card-icon {
       width: 36px; height: 36px; background: var(--orange); border-radius: 6px;
@@ -217,18 +200,26 @@
       direction: ltr; letter-spacing: 0.05em; pointer-events: none;
     }
     .intro-brand {
-      background: var(--orange-bg); display: flex; flex-direction: column;
+      background: #0d0d0d; display: flex; flex-direction: column;
       padding: 10mm; justify-content: space-between; position: relative; overflow: hidden;
     }
-    .intro-brand::before {
-      content: ''; position: absolute; bottom: -15%; left: -20%;
-      width: 80%; height: 80%; border-radius: 50%;
-      background: rgba(255,255,255,0.07); pointer-events: none;
+    .intro-brand-photo {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; z-index: 0;
     }
+    .intro-brand-scrim {
+      /* photo stays clear through the middle; orange blooms only at the foot */
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: linear-gradient(180deg,
+        rgba(10,10,10,0.55) 0%, rgba(10,10,10,0.00) 24%,
+        rgba(10,10,10,0.00) 50%, rgba(26,13,4,0.66) 72%,
+        rgba(208,104,32,0.95) 100%);
+    }
+    .intro-brand-logo { position: relative; z-index: 2; }
     .intro-brand-logo img {
       height: 28px; width: auto; filter: brightness(0) invert(1);
-      position: relative; z-index: 1;
     }
+    .intro-brand-foot { position: relative; z-index: 2; }
     .intro-brand-title {
       font-size: 54pt; font-weight: 900; color: #fff; line-height: 0.9;
       letter-spacing: -0.03em; position: relative; z-index: 1;
@@ -239,8 +230,8 @@
     }
     .intro-brand-label {
       font-size: 7.5pt; font-weight: 700; letter-spacing: 0.25em;
-      text-transform: uppercase; color: rgba(255,255,255,0.55);
-      position: relative; z-index: 1;
+      text-transform: uppercase; color: rgba(255,255,255,0.72);
+      position: relative; z-index: 1; margin-top: 6mm;
     }
     .intro-content {
       background: var(--dark); padding: 10mm 12mm; display: flex; flex-direction: column;
@@ -364,7 +355,6 @@
 <div class="page cover">
   <div class="cover-dark">
     <div class="cover-eyebrow-dark">Selected · Digital Marketing Agency</div>
-    <img src="{{ icon_src }}" class="cover-watermark" alt="">
     <div class="cover-decor-text">{{ data.year }} · CLIENT BRIEF</div>
   </div>
   <div class="cover-panel">
@@ -477,12 +467,14 @@
 {# ── PAGE 3: SEO INTRO ── #}
 <div class="page intro-page" data-year="{{ data.year }}">
   <div class="intro-brand">
+    <img class="intro-brand-photo" src="{{ seo_atmo_src }}" alt="">
+    <div class="intro-brand-scrim"></div>
     <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
-    <div>
+    <div class="intro-brand-foot">
       <div class="intro-brand-title">קידום<br>אורגני</div>
       <div class="intro-brand-sub">SEO Strategy &amp; Execution</div>
+      <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
     </div>
-    <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
   </div>
   <div class="intro-content" style="position:relative;overflow:hidden;">
     <div style="position:absolute;left:-20mm;top:-15mm;opacity:0.06;pointer-events:none;">
@@ -606,12 +598,14 @@
 {# ── PAGE 6: PPC INTRO ── #}
 <div class="page intro-page" data-year="{{ data.year }}">
   <div class="intro-brand">
+    <img class="intro-brand-photo" src="{{ ppc_atmo_src }}" alt="">
+    <div class="intro-brand-scrim"></div>
     <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
-    <div>
+    <div class="intro-brand-foot">
       <div class="intro-brand-title">קמפיין<br>ממומן</div>
       <div class="intro-brand-sub">PPC · Google &amp; Meta</div>
+      <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
     </div>
-    <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
   </div>
   <div class="intro-content" style="position:relative;overflow:hidden;">
     <div style="position:absolute;left:-20mm;top:-15mm;opacity:0.06;pointer-events:none;">
@@ -743,12 +737,14 @@
 {# ── PAGE: WEBSITE DESIGN INTRO ── #}
 <div class="page intro-page" data-year="{{ data.year }}">
   <div class="intro-brand">
+    <img class="intro-brand-photo" style="object-position: 12% center" src="{{ web_atmo_src }}" alt="">
+    <div class="intro-brand-scrim"></div>
     <div class="intro-brand-logo"><img src="{{ logo_src }}" alt="Selected Logo"></div>
-    <div>
+    <div class="intro-brand-foot">
       <div class="intro-brand-title">עיצוב<br>אתרים</div>
       <div class="intro-brand-sub">Web Design &amp; Build</div>
+      <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
     </div>
-    <div class="intro-brand-label">{{ data.client_name }} · {{ data.year }}</div>
   </div>
   <div class="intro-content" style="position:relative;overflow:hidden;">
     <div style="position:absolute;left:-20mm;top:-15mm;opacity:0.06;pointer-events:none;">
@@ -782,7 +778,7 @@
     <div class="page-header-logo"><img src="{{ logo_src }}" alt="Selected"></div>
   </div>
   <div class="page-body">
-    <div class="card-grid">
+    <div class="card-grid three-col">
       <div class="info-card">
         <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7l-2 3v1h8v-1l-2-3h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z"/></svg></div>
         <div class="card-content">
@@ -825,7 +821,7 @@
       </div>
       {% endif %}
       {% if data.website_design.navigation %}
-      <div class="info-card" style="grid-column: span 2;">
+      <div class="info-card">
         <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 10.9c-.61 0-1.1.49-1.1 1.1s.49 1.1 1.1 1.1c.61 0 1.1-.49 1.1-1.1s-.49-1.1-1.1-1.1zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm2.19 12.19L6 18l3.81-8.19L18 6l-3.81 8.19z"/></svg></div>
         <div class="card-content">
           <h4>מערכת ניווט של האתר</h4>
@@ -834,7 +830,7 @@
       </div>
       {% endif %}
       {% if data.website_design.homepage_layout %}
-      <div class="info-card" style="grid-column: span 2;">
+      <div class="info-card">
         <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M3 5v14h18V5H3zm16 12H5V7h14v10zM7 9h10v2H7zm0 4h7v2H7z"/></svg></div>
         <div class="card-content">
           <h4>חלוקת דף הבית</h4>
@@ -843,7 +839,7 @@
       </div>
       {% endif %}
       {% if data.website_design.additional_notes %}
-      <div class="info-card" style="grid-column: span 2;">
+      <div class="info-card">
         <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z"/></svg></div>
         <div class="card-content">
           <h4>הערות והרחבות מיוחדות</h4>

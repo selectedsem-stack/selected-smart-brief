@@ -145,6 +145,9 @@ def main() -> None:
         logo_src=_asset_data_uri("assets/logos/sel-darknb.png", "image/png"),
         full_src=_asset_data_uri("assets/logos/sel-full-black.png", "image/png"),
         icon_src=_asset_data_uri("assets/logos/sel-icon.png", "image/png"),
+        seo_atmo_src=_asset_data_uri("assets/atmosphere/seo.jpg", "image/jpeg"),
+        ppc_atmo_src=_asset_data_uri("assets/atmosphere/ppc.jpg", "image/jpeg"),
+        web_atmo_src=_asset_data_uri("assets/atmosphere/web.jpg", "image/jpeg"),
         show_print_button=True,
     )
 
